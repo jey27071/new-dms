@@ -1,40 +1,8 @@
-// 에셋 데이터 접근 계층
-// 목업 단계: seed(코드) + localStorage 합산
-// 실 서비스 전환 시: 이 파일의 함수 내부만 백엔드/DB 호출로 교체
+// 에셋 데이터 접근 계층 (Supabase)
+// 실 DB(PostgreSQL via Supabase)에 직접 쓰고 읽습니다.
 
-import {
-  assets as seedAssets,
-  type Asset,
-  type AssetCategory,
-  type AssetFormat,
-} from "@/lib/data";
-
-const STORAGE_KEY = "dms.assets.v1";
-
-function isBrowser() {
-  return typeof window !== "undefined";
-}
-
-// ===== 내부: localStorage 헬퍼 =====
-
-function readLocal(): Asset[] {
-  if (!isBrowser()) return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as Asset[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeLocal(list: Asset[]) {
-  if (!isBrowser()) return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
-
-// ===== 공개 API =====
+import { createClient } from "@/lib/supabase/client";
+import { type Asset, type AssetCategory, type AssetFormat } from "@/lib/data";
 
 export type AssetInput = {
   title: string;
@@ -47,71 +15,143 @@ export type AssetInput = {
   primary?: boolean;
 };
 
-/** 전체 에셋 (seed + 사용자 추가) — 브라우저 환경에서만 합산됨 */
-export function listAssets(): Asset[] {
-  return [...seedAssets, ...readLocal()];
+// ===== DB row ↔ Asset 변환 =====
+
+type AssetRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  formats: string[];
+  image: string;
+  downloads: string;
+  uploader: string;
+  uploaded_at: string;
+  is_internal: boolean | null;
+  is_primary: boolean | null;
+  is_seed: boolean;
+  related: string[] | null;
+};
+
+function fromRow(row: AssetRow): Asset {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? undefined,
+    category: row.category as AssetCategory,
+    formats: row.formats as AssetFormat[],
+    image: row.image,
+    downloads: row.downloads,
+    uploader: row.uploader,
+    uploadedAt: row.uploaded_at,
+    internal: row.is_internal ?? undefined,
+    primary: row.is_primary ?? undefined,
+    related: row.related ?? undefined,
+    seed: row.is_seed,
+  };
 }
 
-/** seed인지 사용자 추가인지 구분 */
+// ===== 공개 API =====
+
+export async function listAssets(): Promise<Asset[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("assets")
+    .select("*")
+    .order("uploaded_at", { ascending: false });
+  if (error) {
+    console.error("[listAssets]", error);
+    return [];
+  }
+  return (data as AssetRow[]).map(fromRow);
+}
+
+export async function getAsset(id: string): Promise<Asset | undefined> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("assets")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) {
+    console.error("[getAsset]", error);
+    return undefined;
+  }
+  return data ? fromRow(data as AssetRow) : undefined;
+}
+
 export function isUserAsset(asset: Asset): boolean {
-  return readLocal().some((a) => a.id === asset.id);
+  return !asset.seed;
 }
 
-/** ID 조회 */
-export function getAsset(id: string): Asset | undefined {
-  return listAssets().find((a) => a.id === id);
-}
-
-/** 새 에셋 생성 (localStorage에 저장) */
-export function createAsset(input: AssetInput): Asset {
-  const asset: Asset = {
-    id: `loc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+export async function createAsset(input: AssetInput): Promise<Asset | null> {
+  const supabase = createClient();
+  const id = `loc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const insertRow = {
+    id,
     title: input.title,
+    description: input.description ?? null,
     category: input.category,
     formats: input.formats,
     image: input.image,
-    description: input.description,
     uploader: input.uploader,
-    uploadedAt: new Date().toISOString().slice(0, 10),
     downloads: "0",
-    internal: input.internal,
-    primary: input.primary,
+    uploaded_at: new Date().toISOString().slice(0, 10),
+    is_internal: input.internal ?? false,
+    is_primary: input.primary ?? false,
+    is_seed: false,
   };
-  const current = readLocal();
-  writeLocal([asset, ...current]);
-  return asset;
+  const { data, error } = await supabase
+    .from("assets")
+    .insert(insertRow)
+    .select()
+    .single();
+  if (error) {
+    console.error("[createAsset]", error);
+    return null;
+  }
+  return fromRow(data as AssetRow);
 }
 
-/** 사용자 추가 에셋 수정 (seed는 수정 불가) */
-export function updateAsset(id: string, patch: Partial<AssetInput>): Asset | null {
-  const current = readLocal();
-  const idx = current.findIndex((a) => a.id === id);
-  if (idx === -1) return null;
-  const existing = current[idx];
-  if (!existing) return null;
-  const updated: Asset = {
-    ...existing,
-    ...patch,
-    id: existing.id,
-    uploadedAt: existing.uploadedAt,
-  };
-  const next = [...current];
-  next[idx] = updated;
-  writeLocal(next);
-  return updated;
+export async function updateAsset(
+  id: string,
+  patch: Partial<AssetInput>,
+): Promise<Asset | null> {
+  const supabase = createClient();
+  const update: Record<string, unknown> = {};
+  if (patch.title !== undefined) update.title = patch.title;
+  if (patch.description !== undefined) update.description = patch.description ?? null;
+  if (patch.category !== undefined) update.category = patch.category;
+  if (patch.formats !== undefined) update.formats = patch.formats;
+  if (patch.image !== undefined) update.image = patch.image;
+  if (patch.uploader !== undefined) update.uploader = patch.uploader;
+  if (patch.internal !== undefined) update.is_internal = patch.internal;
+  if (patch.primary !== undefined) update.is_primary = patch.primary;
+
+  const { data, error } = await supabase
+    .from("assets")
+    .update(update)
+    .eq("id", id)
+    .eq("is_seed", false) // seed는 수정 불가
+    .select()
+    .single();
+  if (error) {
+    console.error("[updateAsset]", error);
+    return null;
+  }
+  return fromRow(data as AssetRow);
 }
 
-/** 사용자 추가 에셋 삭제 (seed는 삭제 불가) */
-export function deleteAsset(id: string): boolean {
-  const current = readLocal();
-  const next = current.filter((a) => a.id !== id);
-  if (next.length === current.length) return false;
-  writeLocal(next);
+export async function deleteAsset(id: string): Promise<boolean> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("assets")
+    .delete()
+    .eq("id", id)
+    .eq("is_seed", false); // seed는 삭제 불가
+  if (error) {
+    console.error("[deleteAsset]", error);
+    return false;
+  }
   return true;
-}
-
-/** localStorage 전체 비우기 (디버그용) */
-export function clearLocalAssets() {
-  if (!isBrowser()) return;
-  window.localStorage.removeItem(STORAGE_KEY);
 }

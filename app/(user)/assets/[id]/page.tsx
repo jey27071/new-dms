@@ -15,8 +15,17 @@ export default function AssetDetailPage() {
 
   useEffect(() => {
     if (!id) return;
-    setAllAssets(listAssets());
-    setAsset(getAsset(id) ?? null);
+    let cancelled = false;
+    (async () => {
+      const [all, one] = await Promise.all([listAssets(), getAsset(id)]);
+      if (!cancelled) {
+        setAllAssets(all);
+        setAsset(one ?? null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (asset === undefined) {

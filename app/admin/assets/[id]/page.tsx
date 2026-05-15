@@ -15,16 +15,19 @@ export default function EditAssetPage() {
 
   useEffect(() => {
     if (!id) return;
-    const found = getAsset(id);
-    if (!found) {
-      setAsset(null);
-      return;
-    }
-    if (!isUserAsset(found)) {
-      setAsset(null);
-      return;
-    }
-    setAsset(found);
+    let cancelled = false;
+    (async () => {
+      const found = await getAsset(id);
+      if (cancelled) return;
+      if (!found || !isUserAsset(found)) {
+        setAsset(null);
+        return;
+      }
+      setAsset(found);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (asset === undefined) {

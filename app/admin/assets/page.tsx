@@ -15,15 +15,16 @@ export default function AdminAssetsPage() {
     refresh();
   }, []);
 
-  function refresh() {
-    setItems(listAssets());
+  async function refresh() {
+    const result = await listAssets();
+    setItems(result);
     setMounted(true);
   }
 
-  function handleDelete(id: string) {
-    deleteAsset(id);
+  async function handleDelete(id: string) {
+    await deleteAsset(id);
     setConfirmDeleteId(null);
-    refresh();
+    await refresh();
   }
 
   const seedCount = items.filter((a) => !isUserAsset(a)).length;

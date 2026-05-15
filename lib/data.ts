@@ -110,6 +110,8 @@ export type Asset = {
   internal?: boolean;
   primary?: boolean;
   related?: string[];
+  /** Supabase seed 데이터인지 여부 (true면 읽기 전용) */
+  seed?: boolean;
 };
 
 export const assets: Asset[] = [

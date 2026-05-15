@@ -39,7 +39,9 @@ export function AssetForm({ mode, initial, uploader }: Props) {
     setFormats((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
   }
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     if (!title.trim()) {
@@ -64,12 +66,26 @@ export function AssetForm({ mode, initial, uploader }: Props) {
       internal,
       primary,
     };
-    if (mode === "create") {
-      createAsset(payload);
-    } else if (initial) {
-      updateAsset(initial.id, payload);
+    setSubmitting(true);
+    try {
+      let result;
+      if (mode === "create") {
+        result = await createAsset(payload);
+      } else if (initial) {
+        result = await updateAsset(initial.id, payload);
+      }
+      if (!result) {
+        setError("저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        setSubmitting(false);
+        return;
+      }
+      router.push("/admin/assets");
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      setError("저장 중 오류가 발생했습니다.");
+      setSubmitting(false);
     }
-    router.push("/admin/assets");
   }
 
   return (
@@ -244,10 +260,14 @@ export function AssetForm({ mode, initial, uploader }: Props) {
           </Link>
           <button
             type="submit"
-            className="px-xl py-sm rounded-lg bg-primary text-on-primary font-semibold hover:brightness-95 transition-all flex items-center gap-sm"
+            disabled={submitting}
+            className="px-xl py-sm rounded-lg bg-primary text-on-primary font-semibold hover:brightness-95 transition-all flex items-center gap-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <Icon name={mode === "create" ? "add" : "save"} className="text-[18px]" />
-            {mode === "create" ? "에셋 등록" : "변경사항 저장"}
+            <Icon
+              name={submitting ? "hourglass_empty" : mode === "create" ? "add" : "save"}
+              className="text-[18px]"
+            />
+            {submitting ? "저장 중..." : mode === "create" ? "에셋 등록" : "변경사항 저장"}
           </button>
         </div>
       </div>

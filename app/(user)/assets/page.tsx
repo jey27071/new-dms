@@ -23,8 +23,17 @@ export default function AssetLibraryPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setItems(listAssets());
-    setMounted(true);
+    let cancelled = false;
+    (async () => {
+      const result = await listAssets();
+      if (!cancelled) {
+        setItems(result);
+        setMounted(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const visible = items.slice(0, 9);
