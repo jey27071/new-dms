@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
 import { assetCategoryLabel, type Asset, type AssetCategory, type AssetFormat } from "@/lib/data";
-import { createAsset, updateAsset, type AssetInput } from "@/lib/store/assets";
+import {
+  createAsset,
+  updateAsset,
+  uploadAssetImage,
+  type AssetInput,
+} from "@/lib/store/assets";
 
 const ALL_CATEGORIES: AssetCategory[] = [
   "logo",
@@ -18,6 +23,9 @@ const ALL_CATEGORIES: AssetCategory[] = [
 ];
 const ALL_FORMATS: AssetFormat[] = ["AI", "PNG", "PDF", "SVG", "EPS", "ZIP", "MP4", "FIG", "ASE"];
 
+const MAX_FILE_SIZE_MB = 5;
+const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp", "image/svg+xml"];
+
 type Props = {
   mode: "create" | "edit";
   initial?: Asset;
@@ -29,17 +37,66 @@ export function AssetForm({ mode, initial, uploader }: Props) {
   const [title, setTitle] = useState(initial?.title ?? "");
   const [category, setCategory] = useState<AssetCategory>(initial?.category ?? "logo");
   const [formats, setFormats] = useState<AssetFormat[]>(initial?.formats ?? ["PNG"]);
-  const [image, setImage] = useState(initial?.image ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [internal, setInternal] = useState(initial?.internal ?? false);
   const [primary, setPrimary] = useState(initial?.primary ?? false);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  // 이미지 상태
+  // - existingUrl: 편집 모드일 때 기존 이미지 URL
+  // - file: 새로 선택한 파일 (있으면 업로드)
+  // - previewUrl: 화면에 보여줄 URL (objectURL or existingUrl)
+  const [file, setFile] = useState<File | null>(null);
+  const existingUrl = initial?.image ?? "";
+  const [previewUrl, setPreviewUrl] = useState<string>(existingUrl);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // objectURL 정리
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   function toggleFormat(f: AssetFormat) {
     setFormats((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
   }
 
-  const [submitting, setSubmitting] = useState(false);
+  function applyFile(f: File) {
+    setError(null);
+    if (!ACCEPTED_TYPES.includes(f.type) && !f.name.match(/\.(png|jpe?g|gif|webp|svg)$/i)) {
+      setError("지원하지 않는 파일 형식입니다. PNG · JPG · GIF · WEBP · SVG 만 가능합니다.");
+      return;
+    }
+    if (f.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      setError(`파일이 ${MAX_FILE_SIZE_MB}MB 보다 큽니다. 더 작은 이미지를 사용해주세요.`);
+      return;
+    }
+    if (previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
+    setFile(f);
+    setPreviewUrl(URL.createObjectURL(f));
+  }
+
+  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (f) applyFile(f);
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    setIsDragging(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) applyFile(f);
+  }
+
+  function clearImage() {
+    if (previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
+    setFile(null);
+    setPreviewUrl("");
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -52,22 +109,36 @@ export function AssetForm({ mode, initial, uploader }: Props) {
       setError("파일 포맷을 최소 1개 이상 선택해주세요.");
       return;
     }
-    if (!image.trim()) {
-      setError("이미지 URL을 입력해주세요.");
+    if (!file && !existingUrl) {
+      setError("이미지를 업로드해주세요.");
       return;
     }
-    const payload: AssetInput = {
-      title: title.trim(),
-      category,
-      formats,
-      image: image.trim(),
-      description: description.trim() || undefined,
-      uploader,
-      internal,
-      primary,
-    };
+
     setSubmitting(true);
     try {
+      // 1) 새 파일이 있으면 먼저 업로드
+      let finalUrl = existingUrl;
+      if (file) {
+        const uploaded = await uploadAssetImage(file);
+        if (!uploaded) {
+          setError("이미지 업로드에 실패했습니다. 파일을 다시 선택해주세요.");
+          setSubmitting(false);
+          return;
+        }
+        finalUrl = uploaded;
+      }
+
+      // 2) DB 저장
+      const payload: AssetInput = {
+        title: title.trim(),
+        category,
+        formats,
+        image: finalUrl,
+        description: description.trim() || undefined,
+        uploader,
+        internal,
+        primary,
+      };
       let result;
       if (mode === "create") {
         result = await createAsset(payload);
@@ -106,53 +177,96 @@ export function AssetForm({ mode, initial, uploader }: Props) {
 
       {/* 폼 */}
       <div className="bg-white rounded-xl card-shadow p-xl border border-outline-variant/30 space-y-lg">
-        {/* 미리보기 */}
-        <div className="grid grid-cols-3 gap-lg items-start">
-          <div className="col-span-1">
-            <label className="text-label-caps text-on-surface-variant mb-sm block">미리보기</label>
-            <div className="aspect-[4/3] bg-surface-container-low border border-outline-variant border-dashed rounded-lg overflow-hidden flex items-center justify-center">
-              {image ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={image} alt="preview" className="w-full h-full object-cover" />
-              ) : (
-                <div className="text-center text-secondary p-md">
-                  <Icon name="image" className="text-[32px]" />
-                  <p className="text-label-sm mt-xs">이미지 URL을 입력하면 표시됩니다</p>
+        {/* 이미지 업로드 */}
+        <div className="space-y-xs">
+          <label className="text-label-caps text-on-surface-variant">
+            이미지 <span className="text-error">*</span>
+          </label>
+          <label
+            htmlFor="asset-file"
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            className={
+              "block border-2 border-dashed rounded-xl overflow-hidden cursor-pointer transition-all " +
+              (isDragging
+                ? "border-primary bg-primary/10"
+                : "border-outline-variant hover:border-primary/40 hover:bg-primary/5")
+            }
+          >
+            {previewUrl ? (
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewUrl}
+                  alt="preview"
+                  className="w-full max-h-[360px] object-contain bg-surface-container-low"
+                />
+                <div className="absolute top-sm right-sm flex gap-xs">
+                  <span className="px-sm py-xs bg-white/90 text-on-surface text-label-sm rounded-lg backdrop-blur-sm flex items-center gap-xs">
+                    <Icon name="swap_horiz" className="text-[16px]" />
+                    클릭/드롭으로 교체
+                  </span>
                 </div>
-              )}
-            </div>
-          </div>
-          <div className="col-span-2 space-y-md">
-            <div className="space-y-xs">
-              <label className="text-label-caps text-on-surface-variant" htmlFor="title">
-                제목 <span className="text-error">*</span>
-              </label>
-              <input
-                id="title"
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="예: Q3 캠페인 메인 배너"
-                className="w-full px-md py-sm border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none text-body-base transition-all"
-              />
-            </div>
-            <div className="space-y-xs">
-              <label className="text-label-caps text-on-surface-variant" htmlFor="image">
-                이미지 URL <span className="text-error">*</span>
-              </label>
-              <input
-                id="image"
-                type="url"
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
-                placeholder="https://picsum.photos/seed/my-asset/800/600"
-                className="w-full px-md py-sm border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none text-body-base transition-all font-mono text-body-sm"
-              />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-md p-xl">
+                <div className="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center">
+                  <Icon name="upload_file" className="text-primary text-[28px]" />
+                </div>
+                <div className="text-center">
+                  <p className="text-body-base font-semibold text-on-surface">
+                    파일을 끌어다 놓거나 클릭해서 선택
+                  </p>
+                  <p className="text-label-sm text-secondary mt-xs">
+                    PNG · JPG · GIF · WEBP · SVG (최대 {MAX_FILE_SIZE_MB}MB)
+                  </p>
+                </div>
+              </div>
+            )}
+            <input
+              id="asset-file"
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </label>
+          {previewUrl ? (
+            <div className="flex items-center justify-between pt-xs">
               <p className="text-label-sm text-secondary">
-                데모용으로 <span className="font-mono">picsum.photos</span> 또는 외부 이미지 URL을 붙여넣으세요.
+                {file
+                  ? `선택됨: ${file.name} (${(file.size / 1024).toFixed(0)} KB)`
+                  : "현재 이미지 (변경하려면 위 영역 클릭)"}
               </p>
+              <button
+                type="button"
+                onClick={clearImage}
+                className="text-label-sm text-error hover:underline flex items-center gap-xs"
+              >
+                <Icon name="close" className="text-[14px]" />
+                이미지 제거
+              </button>
             </div>
-          </div>
+          ) : null}
+        </div>
+
+        {/* 제목 */}
+        <div className="space-y-xs">
+          <label className="text-label-caps text-on-surface-variant" htmlFor="title">
+            제목 <span className="text-error">*</span>
+          </label>
+          <input
+            id="title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="예: Q3 캠페인 메인 배너"
+            className="w-full px-md py-sm border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none text-body-base transition-all"
+          />
         </div>
 
         {/* 카테고리 */}
@@ -267,7 +381,13 @@ export function AssetForm({ mode, initial, uploader }: Props) {
               name={submitting ? "hourglass_empty" : mode === "create" ? "add" : "save"}
               className="text-[18px]"
             />
-            {submitting ? "저장 중..." : mode === "create" ? "에셋 등록" : "변경사항 저장"}
+            {submitting
+              ? file
+                ? "업로드 중..."
+                : "저장 중..."
+              : mode === "create"
+                ? "에셋 등록"
+                : "변경사항 저장"}
           </button>
         </div>
       </div>

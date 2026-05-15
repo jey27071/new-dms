@@ -155,3 +155,28 @@ export async function deleteAsset(id: string): Promise<boolean> {
   }
   return true;
 }
+
+// ===== Storage =====
+
+const STORAGE_BUCKET = "assets";
+
+/** 파일을 assets 버킷에 업로드하고 퍼블릭 URL을 반환 */
+export async function uploadAssetImage(file: File): Promise<string | null> {
+  const supabase = createClient();
+  const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase();
+  const safeExt = /^[a-z0-9]+$/.test(ext) ? ext : "jpg";
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+  const { error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type || undefined,
+    });
+  if (error) {
+    console.error("[uploadAssetImage]", error);
+    return null;
+  }
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
