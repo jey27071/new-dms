@@ -38,11 +38,13 @@ export function BannerTemplateForm({ mode, initial, createdBy }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const initialSlots = initial
-    ? { headline: initial.headlineSlot, subtitle: initial.subtitleSlot }
-    : computeDefaultSlots(initial?.width ?? 1200, initial?.height ?? 400);
-  const [headlineSlot, setHeadlineSlot] = useState<BannerSlot>(initialSlots.headline);
-  const [subtitleSlot, setSubtitleSlot] = useState<BannerSlot>(initialSlots.subtitle);
+  const fallbackSlots = computeDefaultSlots(initial?.width ?? 1200, initial?.height ?? 400);
+  const [headlineSlot, setHeadlineSlot] = useState<BannerSlot>(
+    initial?.headlineSlot ?? fallbackSlots.headline,
+  );
+  const [subtitleSlot, setSubtitleSlot] = useState<BannerSlot>(
+    initial?.subtitleSlot ?? fallbackSlots.subtitle,
+  );
 
   // 이미지
   const existingImage = initial?.image ?? "";
