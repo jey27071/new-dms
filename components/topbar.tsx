@@ -1,12 +1,11 @@
-"use client";
-
-import { usePathname } from "next/navigation";
 import { Icon } from "@/components/icon";
 
-export function Topbar() {
-  const pathname = usePathname() || "/";
-  const isAdmin = pathname.startsWith("/admin");
-  const role = isAdmin ? "관리자" : "뷰어";
+type TopbarProps = {
+  area: "user" | "admin";
+};
+
+export function Topbar({ area }: TopbarProps) {
+  const isAdmin = area === "admin";
   const roleClass = isAdmin
     ? "bg-error-container text-on-error-container"
     : "bg-secondary-container text-on-secondary-fixed-variant";
@@ -37,7 +36,9 @@ export function Topbar() {
         <div className="h-8 w-[1px] bg-outline-variant mx-xs" />
         <div className={`flex items-center gap-xs px-md py-xs rounded-full ${roleClass}`}>
           {isAdmin ? <Icon name="verified_user" className="text-[16px]" /> : null}
-          <span className="text-label-sm font-semibold uppercase tracking-wider">{role}</span>
+          <span className="text-label-sm font-semibold uppercase tracking-wider">
+            {isAdmin ? "관리자" : "뷰어"}
+          </span>
         </div>
         {isAdmin ? (
           <>
