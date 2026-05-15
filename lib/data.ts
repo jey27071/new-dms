@@ -274,3 +274,17 @@ export const guidelines: Guideline[] = [
 export function getGuideline(id: string) {
   return guidelines.find((g) => g.id === id);
 }
+
+// ===== 배너 템플릿 =====
+
+export type BannerTemplate = {
+  id: string;
+  name: string;
+  description?: string;
+  image: string;
+  width: number;
+  height: number;
+  createdBy?: string;
+  createdAt: string;
+  seed?: boolean;
+};
