@@ -225,9 +225,13 @@ export type Guideline = {
   category: string;
   updatedAt: string;
   notes: string;
+  body?: string;
   tags: string[];
   cover: string;
+  owner?: string;
+  attachment?: string; // PDF 또는 첨부 파일 URL
   pages: number;
+  seed?: boolean;
 };
 
 export const guidelines: Guideline[] = [
