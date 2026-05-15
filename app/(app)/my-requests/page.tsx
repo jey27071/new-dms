@@ -2,12 +2,21 @@ import Link from "next/link";
 import { Icon } from "@/components/icon";
 import { requests, statusMeta } from "@/lib/data";
 
-const stats = [
+type StatCard = {
+  label: string;
+  value: string;
+  hint?: string;
+  hintClass?: string;
+  dot?: boolean;
+  warning?: boolean;
+};
+
+const stats: StatCard[] = [
   { label: "전체 요청", value: "24", hint: "이번 주 +2", hintClass: "text-primary" },
   { label: "검토 대기", value: "08", dot: true },
   { label: "완료됨", value: "12", hint: "완료율 85%", hintClass: "text-secondary" },
   { label: "긴급 마감", value: "03", warning: true },
-] as const;
+];
 
 const tabs = ["전체", "진행 중", "완료됨", "반려됨"];
 

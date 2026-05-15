@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Icon } from "@/components/icon";
 
-const requestTypes = [
+type RequestType = { label: string; icon: string; active?: boolean };
+
+const requestTypes: RequestType[] = [
   { label: "가이드 문의", icon: "help_center", active: true },
   { label: "에셋 제작", icon: "brush" },
   { label: "현장 프로덕션", icon: "videocam" },
@@ -18,12 +20,15 @@ const categories = [
   "이벤트 및 사이니지",
 ];
 
-const steps = [
+type StepState = "done" | "active" | "pending";
+type Step = { label: string; desc: string; state: StepState };
+
+const steps: Step[] = [
   { label: "제출 완료", desc: "DMS 대기열에 즉시 등록됩니다.", state: "done" },
   { label: "분류 및 검토", desc: "브랜드 매니저가 기술 사양을 검토합니다.", state: "active" },
   { label: "디자인 제작", desc: "크리에이티브 팀이 에셋 제작을 시작합니다.", state: "pending" },
   { label: "최종 승인", desc: "에셋이 DMS 포털에 공개됩니다.", state: "pending" },
-] as const;
+];
 
 export default function SubmitRequestPage() {
   return (

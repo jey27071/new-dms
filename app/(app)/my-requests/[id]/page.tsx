@@ -18,12 +18,15 @@ const referenceFiles = [
   },
 ];
 
-const stepperSteps = [
+type StepState = "done" | "active" | "pending";
+type StepperStep = { label: string; meta: string; state: StepState };
+
+const stepperSteps: StepperStep[] = [
   { label: "제출됨", meta: "5월 9일, 오전 09:15", state: "done" },
   { label: "검토 중", meta: "5월 10일, 오후 02:30", state: "done" },
   { label: "진행 중", meta: "예상 완료일: 5월 19일", state: "active" },
   { label: "완료", meta: "최종 에셋 대기 중", state: "pending" },
-] as const;
+];
 
 export default function RequestDetailPage({ params }: { params: { id: string } }) {
   const req = getRequest(params.id);
