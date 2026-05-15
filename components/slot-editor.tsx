@@ -216,13 +216,13 @@ export function SlotEditor({
           <label className="text-label-sm text-on-surface-variant flex items-center justify-between">
             <span>폰트 크기 (짧은 변 대비)</span>
             <span className="text-secondary font-mono">
-              {(slot.fontScale * 100).toFixed(1)}%
+              {(slot.fontScale * 100).toFixed(1)}% · {Math.round(slot.fontScale * Math.min(width, height))}px
             </span>
           </label>
           <input
             type="range"
             min={2}
-            max={20}
+            max={35}
             step={0.5}
             value={slot.fontScale * 100}
             onChange={(e) => updateSelected({ fontScale: parseFloat(e.target.value) / 100 })}
@@ -280,7 +280,7 @@ function SlotBox({
   previewShortEdge: number;
 }) {
   const label = kind === "headline" ? "헤드라인" : "부제목";
-  const fontPx = Math.max(10, slot.fontScale * previewShortEdge);
+  const fontPx = Math.max(8, slot.fontScale * previewShortEdge);
 
   return (
     <div
@@ -293,22 +293,33 @@ function SlotBox({
         width: `${slot.width}%`,
         textAlign: slot.align,
         cursor: "grab",
+        lineHeight: kind === "headline" ? 1.15 : 1.4,
       }}
       className={
-        "border-2 p-xs select-none transition-colors " +
+        "select-none transition-all " +
         (selected
-          ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-          : "border-white/60 hover:border-white bg-black/10")
+          ? "outline outline-2 outline-primary outline-offset-[1px] ring-4 ring-primary/20"
+          : "outline outline-1 outline-dashed outline-white/70 hover:outline-white")
       }
     >
-      <div className="flex items-center gap-xs mb-[2px]">
-        <Icon name="drag_indicator" className="text-[12px] text-white drop-shadow" />
-        <span className="text-[9px] uppercase tracking-wider font-bold text-white drop-shadow">
-          {label}
-        </span>
-      </div>
+      {/* 떠있는 라벨 칩 — 상단 근처면 아래쪽으로 표시 */}
       <div
-        className="text-white font-semibold leading-tight"
+        className={
+          "absolute flex items-center gap-[3px] px-[6px] py-[2px] rounded text-[9px] uppercase tracking-wider font-bold whitespace-nowrap pointer-events-none " +
+          (slot.top < 8 ? "top-full mt-[3px] " : "bottom-full mb-[3px] ") +
+          (selected
+            ? "bg-primary text-on-primary"
+            : "bg-white/90 text-on-surface")
+        }
+        style={{ left: 0 }}
+      >
+        <Icon name="drag_indicator" className="text-[11px]" />
+        <span>{label}</span>
+      </div>
+
+      {/* 실제 텍스트 — 박스 외곽이 곧 텍스트 영역 */}
+      <div
+        className="text-white font-semibold"
         style={{
           fontSize: `${fontPx}px`,
           textShadow: "0 1px 2px rgba(0,0,0,0.5)",
