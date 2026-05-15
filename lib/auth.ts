@@ -1,9 +1,12 @@
 import { cookies } from "next/headers";
+import {
+  ROLE_COOKIE,
+  EMAIL_COOKIE,
+  type Role,
+  roleFromEmail,
+} from "@/lib/auth-constants";
 
-export type Role = "admin" | "viewer";
-
-export const ROLE_COOKIE = "dms-role";
-export const EMAIL_COOKIE = "dms-email";
+export { ROLE_COOKIE, EMAIL_COOKIE, type Role, roleFromEmail };
 
 export function getRole(): Role | null {
   const value = cookies().get(ROLE_COOKIE)?.value;
@@ -13,8 +16,4 @@ export function getRole(): Role | null {
 
 export function getEmail(): string | null {
   return cookies().get(EMAIL_COOKIE)?.value ?? null;
-}
-
-export function roleFromEmail(email: string): Role {
-  return email.trim().toLowerCase().startsWith("admin@") ? "admin" : "viewer";
 }
