@@ -309,6 +309,31 @@ export type BannerTemplate = {
 // 사내 게시물 템플릿 — 구조는 배너와 동일, 다른 테이블 사용
 export type NoticeTemplate = BannerTemplate;
 
+// ===== AI 프롬프트 =====
+
+export type Prompt = {
+  id: string;
+  title: string;
+  category: string;
+  tags: string[];
+  prompt: string;
+  description?: string;
+  example?: string;
+  createdBy?: string;
+  createdAt: string;
+  seed?: boolean;
+};
+
+export const PROMPT_CATEGORIES = [
+  "텍스트 작성",
+  "이미지 생성",
+  "코드 작성",
+  "분석/요약",
+  "번역",
+  "마케팅 카피",
+  "기타",
+] as const;
+
 /** 캔버스 비율에 맞는 기본 슬롯 위치 */
 export function computeDefaultSlots(width: number, height: number): {
   headline: BannerSlot;

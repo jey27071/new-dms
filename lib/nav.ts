@@ -85,6 +85,12 @@ export const adminNav: NavSection[] = [
         match: (p) => p.startsWith("/admin/notice-templates"),
       },
       {
+        label: "AI 프롬프트",
+        href: "/admin/prompts",
+        icon: "lightbulb",
+        match: (p) => p.startsWith("/admin/prompts"),
+      },
+      {
         label: "모든 요청",
         href: "/admin/requests",
         icon: "list_alt",
