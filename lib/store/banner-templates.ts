@@ -1,9 +1,9 @@
 // 배너 템플릿 데이터 접근 계층
 
 import { createClient } from "@/lib/supabase/client";
-import { type BannerTemplate } from "@/lib/data";
+import { type BannerTemplate, type BannerSlot, computeDefaultSlots } from "@/lib/data";
 
-const STORAGE_BUCKET = "assets"; // 기존 버킷 재사용 (prefix로 구분)
+const STORAGE_BUCKET = "assets";
 
 export type BannerTemplateInput = {
   name: string;
@@ -12,6 +12,8 @@ export type BannerTemplateInput = {
   width: number;
   height: number;
   createdBy?: string;
+  headlineSlot: BannerSlot;
+  subtitleSlot: BannerSlot;
 };
 
 type Row = {
@@ -24,9 +26,12 @@ type Row = {
   created_by: string | null;
   created_at: string;
   is_seed: boolean;
+  headline_slot: BannerSlot | null;
+  subtitle_slot: BannerSlot | null;
 };
 
 function fromRow(row: Row): BannerTemplate {
+  const defaults = computeDefaultSlots(row.width, row.height);
   return {
     id: row.id,
     name: row.name,
@@ -37,6 +42,8 @@ function fromRow(row: Row): BannerTemplate {
     createdBy: row.created_by ?? undefined,
     createdAt: row.created_at,
     seed: row.is_seed,
+    headlineSlot: row.headline_slot ?? defaults.headline,
+    subtitleSlot: row.subtitle_slot ?? defaults.subtitle,
   };
 }
 
@@ -88,6 +95,8 @@ export async function createBannerTemplate(
     height: input.height,
     created_by: input.createdBy ?? null,
     is_seed: false,
+    headline_slot: input.headlineSlot,
+    subtitle_slot: input.subtitleSlot,
   };
   const { data, error } = await supabase
     .from("banner_templates")
@@ -112,6 +121,8 @@ export async function updateBannerTemplate(
   if (patch.image !== undefined) update.image = patch.image;
   if (patch.width !== undefined) update.width = patch.width;
   if (patch.height !== undefined) update.height = patch.height;
+  if (patch.headlineSlot !== undefined) update.headline_slot = patch.headlineSlot;
+  if (patch.subtitleSlot !== undefined) update.subtitle_slot = patch.subtitleSlot;
 
   const { data, error } = await supabase
     .from("banner_templates")

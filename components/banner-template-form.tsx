@@ -4,7 +4,8 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
-import { type BannerTemplate } from "@/lib/data";
+import { SlotEditor } from "@/components/slot-editor";
+import { type BannerTemplate, type BannerSlot, computeDefaultSlots } from "@/lib/data";
 import {
   createBannerTemplate,
   updateBannerTemplate,
@@ -37,6 +38,13 @@ export function BannerTemplateForm({ mode, initial, createdBy }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const initialSlots = initial
+    ? { headline: initial.headlineSlot, subtitle: initial.subtitleSlot }
+    : computeDefaultSlots(initial?.width ?? 1200, initial?.height ?? 400);
+  const [headlineSlot, setHeadlineSlot] = useState<BannerSlot>(initialSlots.headline);
+  const [subtitleSlot, setSubtitleSlot] = useState<BannerSlot>(initialSlots.subtitle);
+
+  // 이미지
   const existingImage = initial?.image ?? "";
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>(existingImage);
@@ -60,15 +68,21 @@ export function BannerTemplateForm({ mode, initial, createdBy }: Props) {
     }
     if (previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
     setFile(f);
-    setPreviewUrl(URL.createObjectURL(f));
+    const objUrl = URL.createObjectURL(f);
+    setPreviewUrl(objUrl);
 
-    // 이미지 자연 크기 자동 감지
+    // 이미지 자연 크기 자동 감지 + 슬롯 기본 위치 재설정 (create 모드에서만)
     const img = new Image();
     img.onload = () => {
       setWidth(img.naturalWidth);
       setHeight(img.naturalHeight);
+      if (mode === "create") {
+        const defaults = computeDefaultSlots(img.naturalWidth, img.naturalHeight);
+        setHeadlineSlot(defaults.headline);
+        setSubtitleSlot(defaults.subtitle);
+      }
     };
-    img.src = URL.createObjectURL(f);
+    img.src = objUrl;
   }
 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -86,6 +100,17 @@ export function BannerTemplateForm({ mode, initial, createdBy }: Props) {
   function applyPreset(p: Preset) {
     setWidth(p.width);
     setHeight(p.height);
+  }
+
+  function resetSlots() {
+    const defaults = computeDefaultSlots(width, height);
+    setHeadlineSlot(defaults.headline);
+    setSubtitleSlot(defaults.subtitle);
+  }
+
+  function onSlotChange(next: { headline: BannerSlot; subtitle: BannerSlot }) {
+    setHeadlineSlot(next.headline);
+    setSubtitleSlot(next.subtitle);
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -114,6 +139,8 @@ export function BannerTemplateForm({ mode, initial, createdBy }: Props) {
         width: Math.floor(width),
         height: Math.floor(height),
         createdBy,
+        headlineSlot,
+        subtitleSlot,
       };
       let result;
       if (mode === "create") {
@@ -174,10 +201,7 @@ export function BannerTemplateForm({ mode, initial, createdBy }: Props) {
             }
           >
             {previewUrl ? (
-              <div
-                className="bg-surface-container-low"
-                style={{ aspectRatio: `${aspect}` }}
-              >
+              <div className="bg-surface-container-low" style={{ aspectRatio: `${aspect}` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previewUrl}
@@ -265,6 +289,19 @@ export function BannerTemplateForm({ mode, initial, createdBy }: Props) {
             </div>
           </div>
         </div>
+
+        {/* 슬롯 편집기 — 이미지 있을 때만 */}
+        {previewUrl ? (
+          <SlotEditor
+            image={previewUrl}
+            width={width}
+            height={height}
+            headline={headlineSlot}
+            subtitle={subtitleSlot}
+            onChange={onSlotChange}
+            onReset={resetSlots}
+          />
+        ) : null}
 
         {/* 설명 */}
         <div className="space-y-xs">

@@ -7,50 +7,58 @@ import { Icon } from "@/components/icon";
 import { type BannerTemplate } from "@/lib/data";
 import { getBannerTemplate } from "@/lib/store/banner-templates";
 
-type Align = "left" | "center" | "right";
-
 export default function BannerEditorPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
   const [template, setTemplate] = useState<BannerTemplate | undefined | null>(undefined);
 
-  // 편집 상태
-  const [headline, setHeadline] = useState("여기에 헤드라인을 입력하세요");
-  const [subtitle, setSubtitle] = useState("부제목 또는 안내 문구");
+  // 사용자 편집 가능: 텍스트 + 색상 + 배경 어둡게
+  const [headline, setHeadline] = useState("");
+  const [subtitle, setSubtitle] = useState("");
   const [color, setColor] = useState("#ffffff");
-  const [align, setAlign] = useState<Align>("left");
   const [dim, setDim] = useState(true);
   const [dimOpacity, setDimOpacity] = useState(35);
-  const [headlineScale, setHeadlineScale] = useState(100);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const previewRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
     (async () => {
       const found = await getBannerTemplate(id);
-      if (!cancelled) setTemplate(found ?? null);
+      if (!cancelled) {
+        if (found) {
+          setHeadline(found.headlineSlot.defaultText);
+          setSubtitle(found.subtitleSlot.defaultText);
+        }
+        setTemplate(found ?? null);
+      }
     })();
     return () => {
       cancelled = true;
     };
   }, [id]);
 
+  // 미리보기 컨테이너 크기 측정 (폰트 비례 표시용)
+  useEffect(() => {
+    if (!previewRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      const e = entries[0];
+      if (e) setContainerSize({ w: e.contentRect.width, h: e.contentRect.height });
+    });
+    ro.observe(previewRef.current);
+    return () => ro.disconnect();
+  }, [template]);
+
   const aspect = useMemo(() => {
     if (!template) return 3;
     return template.height > 0 ? template.width / template.height : 3;
   }, [template]);
 
-  // 폰트 크기 (캔버스 기준) — 짧은 변 기준 + 사용자 조절
-  const baseSize = useMemo(() => {
-    if (!template) return 80;
-    return Math.min(template.width, template.height);
-  }, [template]);
-  const headlinePx = (baseSize * 0.12 * headlineScale) / 100;
-  const subtitlePx = baseSize * 0.06;
+  const previewShortEdge = Math.min(containerSize.w, containerSize.h);
 
   async function handleDownload() {
     if (!template || !previewRef.current) return;
@@ -60,7 +68,6 @@ export default function BannerEditorPage() {
       const mod = await import("html2canvas");
       const html2canvas = mod.default;
       const element = previewRef.current;
-      // 화면 표시 크기 → 템플릿 실제 픽셀로 스케일
       const rect = element.getBoundingClientRect();
       const scale = template.width / rect.width;
       const canvas = await html2canvas(element, {
@@ -110,12 +117,9 @@ export default function BannerEditorPage() {
           <Icon name="error_outline" className="text-on-error-container text-[32px]" />
         </div>
         <h1 className="text-h1 font-semibold mb-xs">템플릿을 찾을 수 없습니다</h1>
-        <p className="text-body-base text-on-surface-variant mb-lg">
-          요청하신 ID에 해당하는 배너 템플릿이 없습니다.
-        </p>
         <Link
           href="/design/banner"
-          className="px-lg py-sm bg-primary text-on-primary rounded-lg text-label-sm font-semibold"
+          className="mt-md px-lg py-sm bg-primary text-on-primary rounded-lg text-label-sm font-semibold"
         >
           템플릿 목록으로
         </Link>
@@ -123,9 +127,12 @@ export default function BannerEditorPage() {
     );
   }
 
+  const { headlineSlot, subtitleSlot } = template;
+  const headlinePx = headlineSlot.fontScale * previewShortEdge;
+  const subtitlePx = subtitleSlot.fontScale * previewShortEdge;
+
   return (
     <div className="max-w-[1280px] mx-auto space-y-lg">
-      {/* 헤더 */}
       <div className="flex items-end justify-between">
         <div>
           <div className="flex items-center gap-xs text-secondary text-label-sm mb-xs">
@@ -159,7 +166,6 @@ export default function BannerEditorPage() {
         <div className="col-span-8">
           <div className="bg-surface-container-low rounded-xl p-lg border border-outline-variant flex items-center justify-center min-h-[400px]">
             <div className="w-full max-w-full">
-              {/* 실제 캔버스 — html2canvas가 이걸 캡쳐 */}
               <div
                 ref={previewRef}
                 className="relative overflow-hidden card-shadow"
@@ -178,51 +184,47 @@ export default function BannerEditorPage() {
                     style={{ backgroundColor: `rgba(0,0,0,${dimOpacity / 100})` }}
                   />
                 ) : null}
-                <div
-                  className="absolute inset-0 flex flex-col justify-center"
-                  style={{
-                    padding: "8%",
-                    alignItems:
-                      align === "center"
-                        ? "center"
-                        : align === "right"
-                          ? "flex-end"
-                          : "flex-start",
-                    textAlign: align,
-                  }}
-                >
-                  {headline ? (
-                    <h2
-                      style={{
-                        color,
-                        fontSize: `${headlinePx}px`,
-                        fontWeight: 700,
-                        lineHeight: 1.15,
-                        margin: 0,
-                        wordBreak: "keep-all",
-                        maxWidth: "100%",
-                      }}
-                    >
-                      {headline}
-                    </h2>
-                  ) : null}
-                  {subtitle ? (
-                    <p
-                      style={{
-                        color,
-                        fontSize: `${subtitlePx}px`,
-                        fontWeight: 400,
-                        lineHeight: 1.4,
-                        marginTop: `${subtitlePx * 0.5}px`,
-                        wordBreak: "keep-all",
-                        maxWidth: "100%",
-                        opacity: 0.95,
-                      }}
-                    >
-                      {subtitle}
-                    </p>
-                  ) : null}
-                </div>
+
+                {/* 헤드라인 슬롯 */}
+                {headline ? (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: `${headlineSlot.top}%`,
+                      left: `${headlineSlot.left}%`,
+                      width: `${headlineSlot.width}%`,
+                      textAlign: headlineSlot.align,
+                      color,
+                      fontSize: `${headlinePx}px`,
+                      fontWeight: 700,
+                      lineHeight: 1.15,
+                      wordBreak: "keep-all",
+                    }}
+                  >
+                    {headline}
+                  </div>
+                ) : null}
+
+                {/* 부제목 슬롯 */}
+                {subtitle ? (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: `${subtitleSlot.top}%`,
+                      left: `${subtitleSlot.left}%`,
+                      width: `${subtitleSlot.width}%`,
+                      textAlign: subtitleSlot.align,
+                      color,
+                      fontSize: `${subtitlePx}px`,
+                      fontWeight: 400,
+                      lineHeight: 1.4,
+                      wordBreak: "keep-all",
+                      opacity: 0.95,
+                    }}
+                  >
+                    {subtitle}
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
@@ -238,7 +240,10 @@ export default function BannerEditorPage() {
         {/* 컨트롤 패널 */}
         <aside className="col-span-4 space-y-md sticky top-24">
           <div className="bg-white rounded-xl card-shadow p-lg border border-outline-variant/30 space-y-md">
-            <h3 className="text-h3 font-semibold mb-sm">텍스트</h3>
+            <h3 className="text-h3 font-semibold mb-sm">텍스트 편집</h3>
+            <p className="text-label-sm text-secondary">
+              관리자가 지정한 위치·크기·정렬을 따릅니다. 사용자는 문구와 색상만 변경할 수 있어요.
+            </p>
 
             <div className="space-y-xs">
               <label className="text-label-caps text-on-surface-variant" htmlFor="headline">
@@ -265,52 +270,6 @@ export default function BannerEditorPage() {
                 onChange={(e) => setSubtitle(e.target.value)}
                 placeholder="보조 설명 (선택)"
                 className="w-full px-md py-sm border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none text-body-base transition-all resize-none"
-              />
-            </div>
-
-            <div className="space-y-xs">
-              <label className="text-label-caps text-on-surface-variant">정렬</label>
-              <div className="flex bg-surface-container-low border border-outline-variant rounded-lg overflow-hidden">
-                {(["left", "center", "right"] as Align[]).map((a) => (
-                  <button
-                    key={a}
-                    type="button"
-                    onClick={() => setAlign(a)}
-                    className={
-                      "flex-1 py-sm transition-colors " +
-                      (align === a
-                        ? "bg-primary text-on-primary"
-                        : "text-secondary hover:bg-surface-container")
-                    }
-                  >
-                    <Icon
-                      name={
-                        a === "left"
-                          ? "format_align_left"
-                          : a === "center"
-                            ? "format_align_center"
-                            : "format_align_right"
-                      }
-                      className="text-[18px]"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-xs">
-              <label className="text-label-caps text-on-surface-variant flex items-center justify-between">
-                <span>헤드라인 크기</span>
-                <span className="text-secondary font-mono">{headlineScale}%</span>
-              </label>
-              <input
-                type="range"
-                min={50}
-                max={200}
-                step={5}
-                value={headlineScale}
-                onChange={(e) => setHeadlineScale(parseInt(e.target.value, 10))}
-                className="w-full accent-primary"
               />
             </div>
 

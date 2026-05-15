@@ -277,6 +277,21 @@ export function getGuideline(id: string) {
 
 // ===== 배너 템플릿 =====
 
+export type BannerSlot = {
+  /** 캔버스 상단 기준 % (0-100) */
+  top: number;
+  /** 캔버스 좌측 기준 % */
+  left: number;
+  /** 캔버스 너비 대비 박스 너비 % */
+  width: number;
+  /** 텍스트 정렬 */
+  align: "left" | "center" | "right";
+  /** 기본 표시 문구 */
+  defaultText: string;
+  /** 짧은 변 기준 폰트 크기 비율 (예: 0.12 = 12%) */
+  fontScale: number;
+};
+
 export type BannerTemplate = {
   id: string;
   name: string;
@@ -287,4 +302,33 @@ export type BannerTemplate = {
   createdBy?: string;
   createdAt: string;
   seed?: boolean;
+  headlineSlot: BannerSlot;
+  subtitleSlot: BannerSlot;
 };
+
+/** 캔버스 비율에 맞는 기본 슬롯 위치 */
+export function computeDefaultSlots(width: number, height: number): {
+  headline: BannerSlot;
+  subtitle: BannerSlot;
+} {
+  const aspect = height > 0 ? width / height : 3;
+  if (aspect >= 1.5) {
+    // 가로 배너
+    return {
+      headline: { top: 30, left: 6, width: 60, align: "left", fontScale: 0.14, defaultText: "헤드라인을 입력하세요" },
+      subtitle: { top: 58, left: 6, width: 60, align: "left", fontScale: 0.06, defaultText: "부제목 또는 안내 문구" },
+    };
+  }
+  if (aspect <= 0.8) {
+    // 세로 배너
+    return {
+      headline: { top: 12, left: 8, width: 84, align: "center", fontScale: 0.08, defaultText: "헤드라인을 입력하세요" },
+      subtitle: { top: 26, left: 8, width: 84, align: "center", fontScale: 0.045, defaultText: "부제목 또는 안내 문구" },
+    };
+  }
+  // 정사각 근처
+  return {
+    headline: { top: 38, left: 8, width: 84, align: "center", fontScale: 0.1, defaultText: "헤드라인을 입력하세요" },
+    subtitle: { top: 56, left: 8, width: 84, align: "center", fontScale: 0.05, defaultText: "부제목 또는 안내 문구" },
+  };
+}
