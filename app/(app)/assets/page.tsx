@@ -112,12 +112,9 @@ export default function AssetLibraryPage() {
                   alt={a.title}
                   className="w-full h-full object-cover"
                 />
-                <button
-                  className="absolute top-sm right-sm p-xs bg-white/80 rounded-full hover:bg-white transition-colors"
-                  onClick={(e) => e.preventDefault()}
-                >
+                <span className="absolute top-sm right-sm p-xs bg-white/80 rounded-full hover:bg-white transition-colors inline-flex">
                   <Icon name="bookmark" className="text-secondary text-[20px]" />
-                </button>
+                </span>
               </div>
               <h4 className="text-h3 font-semibold text-on-surface mb-xs">{a.title}</h4>
               <div className="flex gap-xs mb-md flex-wrap">
