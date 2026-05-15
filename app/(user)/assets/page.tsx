@@ -1,6 +1,10 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
-import { assets, assetCategoryLabel, type AssetCategory, type AssetFormat } from "@/lib/data";
+import { assetCategoryLabel, type Asset, type AssetCategory, type AssetFormat } from "@/lib/data";
+import { listAssets } from "@/lib/store/assets";
 
 const categories: AssetCategory[] = [
   "logo",
@@ -15,6 +19,16 @@ const categories: AssetCategory[] = [
 const formats: AssetFormat[] = ["AI", "PNG", "PDF", "SVG"];
 
 export default function AssetLibraryPage() {
+  const [items, setItems] = useState<Asset[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setItems(listAssets());
+    setMounted(true);
+  }, []);
+
+  const visible = items.slice(0, 9);
+
   return (
     <div className="flex max-w-[1280px] mx-auto -mt-md">
       {/* 좌측 필터 */}
@@ -85,8 +99,12 @@ export default function AssetLibraryPage() {
       <section className="flex-1 p-xl">
         <div className="flex justify-between items-end mb-xl">
           <div>
-            <h1 className="text-h1 font-semibold text-on-surface">124개의 검색 결과</h1>
-            <p className="text-body-base text-on-surface-variant mt-xs">검색어: "로고"</p>
+            <h1 className="text-h1 font-semibold text-on-surface">
+              {mounted ? `${items.length}개의 에셋` : "에셋 라이브러리"}
+            </h1>
+            <p className="text-body-base text-on-surface-variant mt-xs">
+              브랜드 가이드에 맞는 검증된 에셋을 검색·다운로드하세요.
+            </p>
           </div>
           <div className="flex items-center gap-md">
             <span className="text-label-sm text-secondary">정렬:</span>
@@ -98,55 +116,63 @@ export default function AssetLibraryPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-lg">
-          {assets.slice(0, 6).map((a) => (
-            <Link
-              key={a.id}
-              href={`/assets/${a.id}`}
-              className="bg-white card-shadow rounded-xl p-md flex flex-col group transition-all hover:scale-[1.01] hover:border-primary-fixed border border-transparent"
-            >
-              <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden mb-md bg-surface-container">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={a.image}
-                  alt={a.title}
-                  className="w-full h-full object-cover"
-                />
-                <span className="absolute top-sm right-sm p-xs bg-white/80 rounded-full hover:bg-white transition-colors inline-flex">
-                  <Icon name="bookmark" className="text-secondary text-[20px]" />
-                </span>
+        {!mounted ? (
+          <div className="grid grid-cols-3 gap-lg">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white card-shadow rounded-xl p-md animate-pulse">
+                <div className="aspect-[4/3] rounded-lg bg-surface-container mb-md" />
+                <div className="h-4 bg-surface-container rounded mb-xs w-3/4" />
+                <div className="h-3 bg-surface-container rounded w-1/2" />
               </div>
-              <h4 className="text-h3 font-semibold text-on-surface mb-xs">{a.title}</h4>
-              <div className="flex gap-xs mb-md flex-wrap">
-                <span className="px-xs py-[2px] bg-surface-container text-label-sm text-on-surface-variant rounded">
-                  {assetCategoryLabel[a.category]}
-                </span>
-                {a.formats.map((f, idx) => (
-                  <span
-                    key={f}
-                    className={
-                      "px-xs py-[2px] text-label-sm rounded " +
-                      (idx === 0
-                        ? "bg-primary-fixed text-on-primary-fixed-variant"
-                        : "bg-secondary-fixed text-on-secondary-fixed-variant")
-                    }
-                  >
-                    {f}
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-lg">
+            {visible.map((a) => (
+              <Link
+                key={a.id}
+                href={`/assets/${a.id}`}
+                className="bg-white card-shadow rounded-xl p-md flex flex-col group transition-all hover:scale-[1.01] hover:border-primary-fixed border border-transparent"
+              >
+                <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden mb-md bg-surface-container">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={a.image} alt={a.title} className="w-full h-full object-cover" />
+                  <span className="absolute top-sm right-sm p-xs bg-white/80 rounded-full inline-flex">
+                    <Icon name="bookmark" className="text-secondary text-[20px]" />
                   </span>
-                ))}
-              </div>
-              <div className="mt-auto flex justify-between items-center">
-                <div className="flex items-center gap-xs text-secondary">
-                  <Icon name="download" className="text-[16px]" />
-                  <span className="text-label-sm">{a.downloads} 다운로드</span>
                 </div>
-                <span className="bg-primary text-on-primary px-md py-xs rounded-lg text-label-sm font-semibold">
-                  다운로드
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+                <h4 className="text-h3 font-semibold text-on-surface mb-xs">{a.title}</h4>
+                <div className="flex gap-xs mb-md flex-wrap">
+                  <span className="px-xs py-[2px] bg-surface-container text-label-sm text-on-surface-variant rounded">
+                    {assetCategoryLabel[a.category]}
+                  </span>
+                  {a.formats.map((f, idx) => (
+                    <span
+                      key={f}
+                      className={
+                        "px-xs py-[2px] text-label-sm rounded " +
+                        (idx === 0
+                          ? "bg-primary-fixed text-on-primary-fixed-variant"
+                          : "bg-secondary-fixed text-on-secondary-fixed-variant")
+                      }
+                    >
+                      {f}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-auto flex justify-between items-center">
+                  <div className="flex items-center gap-xs text-secondary">
+                    <Icon name="download" className="text-[16px]" />
+                    <span className="text-label-sm">{a.downloads} 다운로드</span>
+                  </div>
+                  <span className="bg-primary text-on-primary px-md py-xs rounded-lg text-label-sm font-semibold">
+                    다운로드
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

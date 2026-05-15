@@ -1,20 +1,59 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Icon } from "@/components/icon";
-import { getAsset, assets, assetCategoryLabel } from "@/lib/data";
+import { assetCategoryLabel, type Asset } from "@/lib/data";
+import { listAssets, getAsset } from "@/lib/store/assets";
 
-export default function AssetDetailPage({ params }: { params: { id: string } }) {
-  const asset = getAsset(params.id);
-  if (!asset) notFound();
+export default function AssetDetailPage() {
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
+  const [asset, setAsset] = useState<Asset | undefined | null>(undefined);
+  const [allAssets, setAllAssets] = useState<Asset[]>([]);
 
-  const related = (asset.related ?? ["2", "5", "6", "7"])
-    .map((id) => assets.find((a) => a.id === id))
-    .filter((a): a is NonNullable<typeof a> => Boolean(a))
-    .slice(0, 4);
+  useEffect(() => {
+    if (!id) return;
+    setAllAssets(listAssets());
+    setAsset(getAsset(id) ?? null);
+  }, [id]);
+
+  if (asset === undefined) {
+    return (
+      <div className="max-w-[1040px] mx-auto pb-24">
+        <div className="animate-pulse space-y-lg">
+          <div className="h-6 bg-surface-container rounded w-1/2" />
+          <div className="h-64 bg-surface-container rounded-xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (asset === null) {
+    return (
+      <div className="max-w-[1040px] mx-auto pb-24 flex flex-col items-center text-center pt-xl">
+        <div className="w-16 h-16 rounded-full bg-error-container flex items-center justify-center mb-md">
+          <Icon name="error_outline" className="text-on-error-container text-[32px]" />
+        </div>
+        <h1 className="text-h1 font-semibold mb-xs">에셋을 찾을 수 없습니다</h1>
+        <p className="text-body-base text-on-surface-variant mb-lg">
+          요청하신 ID에 해당하는 에셋이 없습니다. 라이브러리에서 다시 확인해주세요.
+        </p>
+        <Link
+          href="/assets"
+          className="px-lg py-sm bg-primary text-on-primary rounded-lg text-label-sm font-semibold"
+        >
+          에셋 라이브러리로
+        </Link>
+      </div>
+    );
+  }
+
+  const related = allAssets.filter((a) => a.id !== asset.id).slice(0, 4);
 
   return (
     <div className="max-w-[1040px] mx-auto pb-24">
-      {/* Breadcrumb */}
       <nav className="flex items-center gap-xs text-body-sm text-secondary mb-lg">
         <Link href="/" className="hover:text-primary transition-colors">
           홈
@@ -28,7 +67,6 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
       </nav>
 
       <div className="flex gap-xl">
-        {/* 좌측: 프리뷰 + 포맷 탭 */}
         <div className="w-[60%] flex flex-col gap-lg">
           <div className="bg-white rounded-xl card-shadow p-lg overflow-hidden border border-outline-variant">
             <div className="relative aspect-video bg-surface-container rounded-lg flex items-center justify-center p-xl overflow-hidden">
@@ -80,7 +118,6 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
           </div>
         </div>
 
-        {/* 우측: 메타데이터 */}
         <div className="w-[40%] flex flex-col gap-lg">
           <div className="bg-white rounded-xl card-shadow p-lg border border-outline-variant h-fit">
             <div className="flex justify-between items-start mb-sm">
@@ -159,11 +196,13 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
         </div>
       </div>
 
-      {/* 관련 에셋 */}
       <section className="mt-xl">
         <div className="flex justify-between items-end mb-lg">
           <h2 className="text-h2 font-semibold">관련 에셋</h2>
-          <Link href="/guidelines" className="text-primary text-body-base font-semibold hover:underline">
+          <Link
+            href="/guidelines"
+            className="text-primary text-body-base font-semibold hover:underline"
+          >
             브랜드 가이드 보기
           </Link>
         </div>
@@ -190,38 +229,6 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
           ))}
         </div>
       </section>
-
-      {/* 고정 하단 바 */}
-      <footer className="fixed bottom-0 right-0 w-[calc(100%-240px)] bg-white border-t border-outline-variant px-xl py-md flex justify-between items-center z-40 card-shadow">
-        <div className="flex items-center gap-lg">
-          <div className="flex -space-x-2">
-            <div className="w-8 h-8 rounded-full border-2 border-white bg-surface-container-highest flex items-center justify-center text-label-sm font-bold">
-              SM
-            </div>
-            <div className="w-8 h-8 rounded-full border-2 border-white bg-surface-container-highest flex items-center justify-center text-label-sm font-bold">
-              JD
-            </div>
-            <div className="w-8 h-8 rounded-full border-2 border-white bg-surface-container-highest flex items-center justify-center text-label-sm font-bold">
-              AL
-            </div>
-          </div>
-          <p className="text-body-sm text-secondary">마지막 업데이트: 2시간 전 ({asset.uploader})</p>
-        </div>
-        <div className="flex items-center gap-md">
-          <button className="flex items-center gap-xs px-lg py-sm text-secondary hover:bg-surface-container-low transition-colors rounded-lg text-body-base">
-            <Icon name="favorite" className="text-[20px]" />
-            즐겨찾기
-          </button>
-          <button className="flex items-center gap-xs px-lg py-sm text-secondary hover:bg-surface-container-low transition-colors rounded-lg text-body-base">
-            <Icon name="share" className="text-[20px]" />
-            공유
-          </button>
-          <button className="flex items-center gap-xs bg-primary text-on-primary px-xl py-sm rounded-lg hover:brightness-95 transition-all text-body-base">
-            <Icon name="file_download_done" className="text-[20px]" />
-            모든 형식 다운로드
-          </button>
-        </div>
-      </footer>
     </div>
   );
 }
