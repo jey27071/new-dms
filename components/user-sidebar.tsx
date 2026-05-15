@@ -5,18 +5,28 @@ import { usePathname } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { userNav, type NavItem } from "@/lib/nav";
 
-function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+function NavLink({
+  item,
+  active,
+  indent,
+}: {
+  item: NavItem;
+  active: boolean;
+  indent: boolean;
+}) {
+  const basePad = indent ? "pl-[36px]" : "pl-[20px]";
+  const activePad = indent ? "pl-[33px]" : "pl-[17px]";
   return (
     <Link
       href={item.href}
       className={
         "flex items-center gap-md h-10 transition-colors active:scale-[0.98] " +
         (active
-          ? "text-primary font-semibold border-l-[3px] border-primary pl-[17px]"
-          : "text-secondary pl-[20px] hover:bg-surface-container-highest")
+          ? `text-primary font-semibold border-l-[3px] border-primary ${activePad}`
+          : `text-secondary ${basePad} hover:bg-surface-container-highest`)
       }
     >
-      <Icon name={item.icon} className="text-[22px]" />
+      <Icon name={item.icon} className={indent ? "text-[18px]" : "text-[22px]"} />
       <span className="text-[14px]">{item.label}</span>
     </Link>
   );
@@ -37,8 +47,30 @@ export function UserSidebar({ role, email }: { role: "admin" | "viewer"; email: 
       </div>
 
       <nav className="flex flex-col gap-xs">
-        {userNav.map((item) => (
-          <NavLink key={item.href} item={item} active={isActive(item)} />
+        {userNav.map((section, idx) => (
+          <div key={idx} className={idx > 0 ? "mt-md" : ""}>
+            {section.header ? (
+              <div className="px-lg pt-xs pb-sm flex items-center gap-sm">
+                <Icon
+                  name={section.header.icon}
+                  className="text-on-surface-variant text-[16px]"
+                />
+                <span className="text-label-caps text-on-surface-variant uppercase tracking-wider">
+                  {section.header.label}
+                </span>
+              </div>
+            ) : null}
+            <div className="flex flex-col gap-xs">
+              {section.items.map((item) => (
+                <NavLink
+                  key={item.href}
+                  item={item}
+                  active={isActive(item)}
+                  indent={!!section.header}
+                />
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
 
@@ -72,7 +104,9 @@ export function UserSidebar({ role, email }: { role: "admin" | "viewer"; email: 
               {(email || "U").slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-label-sm font-semibold text-on-surface truncate">{email || "사용자"}</p>
+              <p className="text-label-sm font-semibold text-on-surface truncate">
+                {email || "사용자"}
+              </p>
               <p className="text-[10px] text-secondary uppercase tracking-wider">
                 {role === "admin" ? "관리자" : "뷰어"}
               </p>

@@ -50,9 +50,11 @@ export function AdminSidebar({ email }: { email: string }) {
       </Link>
 
       <nav className="flex flex-col gap-xs">
-        {adminNav.map((item) => (
-          <NavLink key={item.href} item={item} active={isActive(item)} />
-        ))}
+        {adminNav.flatMap((section) =>
+          section.items.map((item) => (
+            <NavLink key={item.href} item={item} active={isActive(item)} />
+          )),
+        )}
       </nav>
 
       <div className="px-lg mt-auto flex flex-col gap-sm">
@@ -62,7 +64,9 @@ export function AdminSidebar({ email }: { email: string }) {
               {(email || "A").slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-label-sm font-semibold text-on-surface truncate">{email || "관리자"}</p>
+              <p className="text-label-sm font-semibold text-on-surface truncate">
+                {email || "관리자"}
+              </p>
               <p className="text-[10px] text-on-error-container uppercase tracking-wider font-bold">
                 관리자
               </p>

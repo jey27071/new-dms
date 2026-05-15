@@ -33,14 +33,20 @@ function TemplatePreview({ shape }: { shape: Template["shape"] }) {
   }
 }
 
-export default function PreviewCreatorPage() {
+export default function BannerDesignPage() {
   return (
     <div className="max-w-[1280px] mx-auto space-y-xl">
       {/* 헤더 */}
       <div>
-        <h1 className="text-h1 font-semibold text-on-surface">프리뷰 크리에이터</h1>
+        <div className="flex items-center gap-sm text-secondary text-label-sm mb-xs">
+          <Icon name="auto_awesome" className="text-[14px]" />
+          <span>디자인 제작</span>
+          <Icon name="chevron_right" className="text-[14px]" />
+          <span className="text-primary font-semibold">배너 제작</span>
+        </div>
+        <h1 className="text-h1 font-semibold text-on-surface">배너 제작</h1>
         <p className="text-body-base text-on-surface-variant mt-xs">
-          템플릿을 선택하고 텍스트·브랜드 에셋을 편집해 즉시 시안을 만드세요.
+          관리자가 등록한 배너 템플릿을 선택하고 문구만 수정해 즉시 시안을 만드세요.
         </p>
       </div>
 
