@@ -83,19 +83,20 @@ export function isUserGuideline(g: Guideline): boolean {
   return !g.seed;
 }
 
-function slugify(input: string): string {
-  return input
+function generateId(title: string): string {
+  // ASCII 전용 ID — 한국어 제목도 안전한 URL이 되도록
+  const slug = title
     .toLowerCase()
-    .replace(/[^a-z0-9가-힣\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .slice(0, 40);
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 24);
+  const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  return slug ? `${slug}-${suffix}` : `g-${suffix}`;
 }
 
 export async function createGuideline(input: GuidelineInput): Promise<Guideline | null> {
   const supabase = createClient();
-  const slug = slugify(input.title) || "guideline";
-  const id = `${slug}-${Date.now().toString(36)}`;
+  const id = generateId(input.title);
   const insertRow = {
     id,
     title: input.title,

@@ -7,9 +7,19 @@ import { Icon } from "@/components/icon";
 import { type Guideline } from "@/lib/data";
 import { listGuidelines, getGuideline } from "@/lib/store/guidelines";
 
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
 export default function GuidelineDetailPage() {
   const params = useParams<{ id: string }>();
-  const id = params?.id;
+  const rawId = params?.id;
+  // URL 인코딩된 값일 수 있으므로 디코드 시도
+  const id = rawId ? safeDecode(rawId) : undefined;
   const [guideline, setGuideline] = useState<Guideline | undefined | null>(undefined);
   const [all, setAll] = useState<Guideline[]>([]);
 

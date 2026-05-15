@@ -8,9 +8,18 @@ import { GuidelineForm } from "@/components/guideline-form";
 import { getGuideline, isUserGuideline } from "@/lib/store/guidelines";
 import type { Guideline } from "@/lib/data";
 
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
 export default function EditGuidelinePage() {
   const params = useParams<{ id: string }>();
-  const id = params?.id;
+  const rawId = params?.id;
+  const id = rawId ? safeDecode(rawId) : undefined;
   const [guideline, setGuideline] = useState<Guideline | undefined | null>(undefined);
 
   useEffect(() => {
