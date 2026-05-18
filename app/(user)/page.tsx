@@ -1,48 +1,80 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
+import { listAssets } from "@/lib/store/assets";
+import { type Asset, assetCategoryLabel } from "@/lib/data";
 
 const categories = [
-  { label: "로고", icon: "category" },
-  { label: "폰트", icon: "font_download" },
-  { label: "컬러", icon: "palette" },
-  { label: "아이콘", icon: "token" },
-  { label: "템플릿", icon: "dashboard_customize" },
-  { label: "사진", icon: "camera" },
-  { label: "소셜 미디어", icon: "share" },
+  { label: "로고", icon: "category", filter: "logo" },
+  { label: "폰트", icon: "font_download", filter: "typography" },
+  { label: "컬러", icon: "palette", filter: "style" },
+  { label: "아이콘", icon: "token", filter: "icon" },
+  { label: "템플릿", icon: "dashboard_customize", filter: "template" },
+  { label: "사진", icon: "camera", filter: "photo" },
+  { label: "소셜 미디어", icon: "share", filter: "social" },
 ];
 
-const recentlyAdded = [
-  {
-    tag: "V3 브랜드 리프레시",
-    tagColor: "text-primary",
-    title: "겨울 마케팅 키트",
-    updated: "2시간 전 업데이트됨",
-    image: "https://picsum.photos/seed/dms-winter/560/320",
-  },
-  {
-    tag: "로고",
-    tagColor: "text-tertiary",
-    title: "모노톤 배지 팩",
-    updated: "5시간 전 업데이트됨",
-    image: "https://picsum.photos/seed/dms-mono/560/320",
-  },
-  {
-    tag: "아이콘",
-    tagColor: "text-primary",
-    title: "커스텀 UI 아이콘 세트",
-    updated: "어제 업데이트됨",
-    image: "https://picsum.photos/seed/dms-icon/560/320",
-  },
-  {
-    tag: "가이드라인",
-    tagColor: "text-secondary",
-    title: "브랜드 보이스 매뉴얼",
-    updated: "2일 전 업데이트됨",
-    image: "https://picsum.photos/seed/dms-voice/560/320",
-  },
-];
+function relativeTime(date: string): string {
+  if (!date) return "—";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return date;
+  const diff = Date.now() - d.getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "방금 전 업데이트됨";
+  if (min < 60) return `${min}분 전 업데이트됨`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}시간 전 업데이트됨`;
+  const day = Math.floor(hr / 24);
+  if (day === 1) return "어제 업데이트됨";
+  if (day < 30) return `${day}일 전 업데이트됨`;
+  return `${date.slice(0, 10)} 업데이트됨`;
+}
+
+/** "2.4k" / "612" 같은 다운로드 카운트 문자열을 숫자로 변환 */
+function parseDownloads(s: string): number {
+  if (!s) return 0;
+  const m = s.trim().toLowerCase();
+  const num = parseFloat(m);
+  if (isNaN(num)) return 0;
+  if (m.endsWith("k")) return num * 1000;
+  if (m.endsWith("m")) return num * 1000000;
+  return num;
+}
 
 export default function HomePage() {
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    listAssets().then((result) => {
+      if (!cancelled) {
+        setAssets(result);
+        setMounted(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const recentlyAdded = useMemo(() => {
+    return [...assets]
+      .sort(
+        (a, b) =>
+          new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
+      )
+      .slice(0, 6);
+  }, [assets]);
+
+  const popular = useMemo(() => {
+    return [...assets]
+      .sort((a, b) => parseDownloads(b.downloads) - parseDownloads(a.downloads))
+      .slice(0, 4);
+  }, [assets]);
+
   return (
     <div className="space-y-xl">
       {/* 디자인 탐색 */}
@@ -75,103 +107,120 @@ export default function HomePage() {
             전체 보기
           </Link>
         </div>
-        <div className="flex gap-lg overflow-x-auto pb-md hide-scrollbar">
-          {recentlyAdded.map((card) => (
-            <Link
-              key={card.title}
-              href="/assets/1"
-              className="flex-none w-[280px] bg-white rounded-xl card-shadow overflow-hidden p-md group cursor-pointer border border-transparent hover:border-primary-fixed transition-all"
-            >
-              <div className="h-40 rounded-lg bg-surface-container overflow-hidden mb-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  alt={card.title}
-                  src={card.image}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+        {!mounted ? (
+          <div className="flex gap-lg overflow-x-auto pb-md hide-scrollbar">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="flex-none w-[280px] bg-white rounded-xl card-shadow overflow-hidden p-md animate-pulse"
+              >
+                <div className="h-40 rounded-lg bg-surface-container mb-sm" />
+                <div className="h-3 bg-surface-container rounded w-1/3 mb-xs" />
+                <div className="h-5 bg-surface-container rounded w-3/4" />
               </div>
-              <span className={`text-label-caps ${card.tagColor} mb-xs block`}>{card.tag}</span>
-              <h4 className="text-h3 font-semibold text-on-surface truncate">{card.title}</h4>
-              <p className="text-body-sm text-secondary mt-xs">{card.updated}</p>
-            </Link>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : recentlyAdded.length === 0 ? (
+          <div className="bg-white rounded-xl card-shadow p-xl text-center">
+            <Icon name="inventory_2" className="text-secondary text-[40px] mb-sm" />
+            <p className="text-body-base text-secondary">아직 등록된 에셋이 없습니다.</p>
+          </div>
+        ) : (
+          <div className="flex gap-lg overflow-x-auto pb-md hide-scrollbar">
+            {recentlyAdded.map((asset) => (
+              <Link
+                key={asset.id}
+                href={`/assets/${asset.id}`}
+                className="flex-none w-[280px] bg-white rounded-xl card-shadow overflow-hidden p-md group cursor-pointer border border-transparent hover:border-primary-fixed transition-all"
+              >
+                <div className="h-40 rounded-lg bg-surface-container overflow-hidden mb-sm">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    alt={asset.title}
+                    src={asset.image}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <span className="text-label-caps text-primary mb-xs block">
+                  {assetCategoryLabel[asset.category]}
+                </span>
+                <h4 className="text-h3 font-semibold text-on-surface truncate">{asset.title}</h4>
+                <p className="text-body-sm text-secondary mt-xs">{relativeTime(asset.uploadedAt)}</p>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* 이번 달 인기 에셋 */}
       <section>
-        <h3 className="text-h2 font-semibold text-on-background mb-md">이번 달 인기 에셋</h3>
-        <div className="grid grid-cols-4 gap-lg">
-          {/* 팔레트 */}
-          <div className="bg-white rounded-xl card-shadow p-md flex flex-col hover:shadow-lg transition-shadow border border-outline-variant/30">
-            <div className="flex items-center gap-md mb-md">
-              <div className="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center">
-                <Icon name="format_paint" className="text-primary text-[24px]" />
-              </div>
-              <div>
-                <h4 className="text-h3 font-semibold">기본 팔레트</h4>
-                <p className="text-label-sm text-secondary">컬러 · 1.2k 다운로드</p>
-              </div>
-            </div>
-            <div className="flex gap-xs h-4 rounded-full overflow-hidden">
-              <div className="flex-1 bg-primary" />
-              <div className="flex-1 bg-primary-container" />
-              <div className="flex-1 bg-surface-container-highest" />
-              <div className="flex-1 bg-secondary" />
-            </div>
-          </div>
-
-          {/* 키노트 */}
-          <div className="bg-white rounded-xl card-shadow p-md flex flex-col hover:shadow-lg transition-shadow border border-outline-variant/30">
-            <div className="flex items-center gap-md mb-md">
-              <div className="w-12 h-12 rounded-lg bg-tertiary-fixed flex items-center justify-center">
-                <Icon name="article" className="text-tertiary text-[24px]" />
-              </div>
-              <div>
-                <h4 className="text-h3 font-semibold">키노트 템플릿</h4>
-                <p className="text-label-sm text-secondary">템플릿 · 840 다운로드</p>
-              </div>
-            </div>
-            <div className="flex justify-between items-center mt-auto">
-              <span className="text-body-sm text-on-surface-variant italic">v2.4 출시됨</span>
-              <Icon name="download" className="text-outline-variant text-[20px]" />
-            </div>
-          </div>
-
-          {/* 라이프스타일 */}
-          <div className="bg-white rounded-xl card-shadow p-md flex flex-col hover:shadow-lg transition-shadow border border-outline-variant/30">
-            <div className="flex items-center gap-md mb-md">
-              <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center">
-                <Icon name="imagesmode" className="text-secondary text-[24px]" />
-              </div>
-              <div>
-                <h4 className="text-h3 font-semibold">오피스 라이프스타일</h4>
-                <p className="text-label-sm text-secondary">사진 · 612 다운로드</p>
-              </div>
-            </div>
-            <div className="flex -space-x-2">
-              <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-300" />
-              <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-400" />
-              <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-500" />
-            </div>
-          </div>
-
-          {/* 마스터 로고 키트 */}
-          <div className="bg-white rounded-xl card-shadow p-md flex flex-col hover:shadow-lg transition-shadow border border-outline-variant/30">
-            <div className="flex items-center gap-md mb-md">
-              <div className="w-12 h-12 rounded-lg bg-primary-fixed-dim flex items-center justify-center">
-                <Icon name="verified" className="text-on-primary-fixed-variant text-[24px]" />
-              </div>
-              <div>
-                <h4 className="text-h3 font-semibold">마스터 로고 키트</h4>
-                <p className="text-label-sm text-secondary">로고 · 2.5k 다운로드</p>
-              </div>
-            </div>
-            <div className="bg-secondary-container rounded px-sm py-xs self-start">
-              <span className="text-[10px] font-bold text-on-secondary-fixed-variant">승인된 에셋</span>
-            </div>
-          </div>
+        <div className="flex justify-between items-center mb-md">
+          <h3 className="text-h2 font-semibold text-on-background">인기 에셋</h3>
+          <Link href="/assets" className="text-label-sm text-primary font-bold hover:underline">
+            전체 보기
+          </Link>
         </div>
+        {!mounted ? (
+          <div className="grid grid-cols-4 gap-lg">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-xl card-shadow p-md border border-outline-variant/30 animate-pulse"
+              >
+                <div className="flex items-center gap-md mb-md">
+                  <div className="w-12 h-12 rounded-lg bg-surface-container" />
+                  <div className="flex-1">
+                    <div className="h-4 bg-surface-container rounded mb-xs w-2/3" />
+                    <div className="h-3 bg-surface-container rounded w-1/2" />
+                  </div>
+                </div>
+                <div className="h-4 bg-surface-container rounded" />
+              </div>
+            ))}
+          </div>
+        ) : popular.length === 0 ? null : (
+          <div className="grid grid-cols-4 gap-lg">
+            {popular.map((asset) => (
+              <Link
+                key={asset.id}
+                href={`/assets/${asset.id}`}
+                className="bg-white rounded-xl card-shadow p-md flex flex-col hover:shadow-lg transition-shadow border border-outline-variant/30 group"
+              >
+                <div className="flex items-center gap-md mb-md">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-surface-container flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={asset.image}
+                      alt={asset.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-h3 font-semibold truncate group-hover:text-primary transition-colors">
+                      {asset.title}
+                    </h4>
+                    <p className="text-label-sm text-secondary truncate">
+                      {assetCategoryLabel[asset.category]} · {asset.downloads} 다운로드
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center mt-auto">
+                  <div className="flex flex-wrap gap-xs">
+                    {asset.formats.slice(0, 2).map((f) => (
+                      <span
+                        key={f}
+                        className="px-xs py-[1px] text-[10px] bg-primary-fixed text-on-primary-fixed-variant rounded font-mono"
+                      >
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                  <Icon name="download" className="text-outline-variant text-[18px]" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* CTA 배너 */}
