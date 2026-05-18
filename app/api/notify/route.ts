@@ -1,8 +1,11 @@
-// 이메일 알림 API 라우트 (Resend)
+// 이메일 알림 API 라우트 (Gmail SMTP · nodemailer)
 // 요청 생성·담당자 배정·상태 변경 시 호출됨. CC 다중 수신자 처리 포함.
 
 import { NextRequest } from "next/server";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
+
+// Node.js 런타임 강제 (Edge에서는 nodemailer 동작 안 함)
+export const runtime = "nodejs";
 
 type Body =
   | {
@@ -160,13 +163,22 @@ function emailShell(opts: {
 }
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM;
+  const smtpHost = process.env.SMTP_HOST ?? "smtp.gmail.com";
+  const smtpPort = Number(process.env.SMTP_PORT ?? 587);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  // 발신 표시: MAIL_FROM 이 없으면 SMTP_USER 사용. Gmail SMTP는 결국
+  // 인증된 계정으로 발송되므로 이메일 주소는 SMTP_USER 와 일치시키는 것이 안전.
+  const from = process.env.MAIL_FROM || (smtpUser ? `SDMS <${smtpUser}>` : "");
   const adminFallback = process.env.ADMIN_NOTIFY_EMAIL;
 
-  if (!apiKey || !from) {
+  if (!smtpUser || !smtpPass) {
     return Response.json(
-      { ok: false, error: "Resend가 설정되지 않았습니다 (RESEND_API_KEY/RESEND_FROM)." },
+      {
+        ok: false,
+        error:
+          "SMTP가 설정되지 않았습니다. SMTP_USER / SMTP_PASS (앱 패스워드) 환경변수를 등록하세요.",
+      },
       { status: 500 },
     );
   }
@@ -178,7 +190,12 @@ export async function POST(req: NextRequest) {
     return Response.json({ ok: false, error: "잘못된 요청" }, { status: 400 });
   }
 
-  const resend = new Resend(apiKey);
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465, // 465: SSL, 587: STARTTLS
+    auth: { user: smtpUser, pass: smtpPass },
+  });
   const origin = getOrigin(req);
 
   try {
@@ -218,14 +235,14 @@ export async function POST(req: NextRequest) {
           label: "관리자 콘솔에서 확인",
         },
       });
-      const result = await resend.emails.send({
+      const result = await transporter.sendMail({
         from,
         to: toEmail,
         cc: cc.length > 0 ? cc : undefined,
         subject: `[SDMS] 새 요청 · ${body.title}`,
         html,
       });
-      return Response.json({ ok: true, id: result.data?.id, to: toEmail, cc });
+      return Response.json({ ok: true, id: result.messageId, to: toEmail, cc });
     }
 
     if (body.type === "request_assigned") {
@@ -245,14 +262,14 @@ export async function POST(req: NextRequest) {
           label: "요청 상세 보기",
         },
       });
-      const result = await resend.emails.send({
+      const result = await transporter.sendMail({
         from,
         to: toEmail,
         cc: cc.length > 0 ? cc : undefined,
         subject: `[SDMS] 담당 배정 · ${body.title}`,
         html,
       });
-      return Response.json({ ok: true, id: result.data?.id, to: toEmail, cc });
+      return Response.json({ ok: true, id: result.messageId, to: toEmail, cc });
     }
 
     if (body.type === "status_changed") {
@@ -283,14 +300,14 @@ export async function POST(req: NextRequest) {
           label: "요청 상세 보기",
         },
       });
-      const result = await resend.emails.send({
+      const result = await transporter.sendMail({
         from,
         to: toEmail,
         cc: cc.length > 0 ? cc : undefined,
         subject: `[SDMS] 상태 변경 · ${body.title}`,
         html,
       });
-      return Response.json({ ok: true, id: result.data?.id, to: toEmail, cc });
+      return Response.json({ ok: true, id: result.messageId, to: toEmail, cc });
     }
 
     return Response.json({ ok: false, error: "알 수 없는 알림 타입" }, { status: 400 });
