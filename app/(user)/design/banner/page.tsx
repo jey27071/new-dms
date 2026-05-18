@@ -29,11 +29,11 @@ export default function BannerPickerPage() {
       <div>
         <div className="flex items-center gap-sm text-secondary text-label-sm mb-xs">
           <Icon name="auto_awesome" className="text-[14px]" />
-          <span>디자인 제작</span>
+          <span>디자인 템플릿</span>
           <Icon name="chevron_right" className="text-[14px]" />
-          <span className="text-primary font-semibold">배너 제작</span>
+          <span className="text-primary font-semibold">배너(현수막)</span>
         </div>
-        <h1 className="text-h1 font-semibold text-on-surface">배너 제작</h1>
+        <h1 className="text-h1 font-semibold text-on-surface">배너(현수막)</h1>
         <p className="text-body-base text-on-surface-variant mt-xs">
           템플릿을 선택하고 문구만 수정해 PNG로 다운로드하세요.
         </p>

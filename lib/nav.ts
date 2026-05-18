@@ -3,6 +3,8 @@ export type NavItem = {
   href: string;
   icon: string;
   match?: (pathname: string) => boolean;
+  /** 3단계 메뉴를 위한 하위 항목 (선택) */
+  children?: NavItem[];
 };
 
 export type NavSection = {
@@ -27,7 +29,7 @@ export const userNav: NavSection[] = [
         match: (p) => p.startsWith("/guidelines"),
       },
       {
-        label: "내 요청",
+        label: "디자인 제작 요청",
         href: "/my-requests",
         icon: "pending_actions",
         match: (p) => p.startsWith("/my-requests"),
@@ -35,27 +37,41 @@ export const userNav: NavSection[] = [
     ],
   },
   {
-    header: { label: "디자인 제작", icon: "auto_awesome", href: "/design" },
+    header: { label: "디자인 템플릿", icon: "auto_awesome", href: "/design" },
     collapsible: true,
     openWhen: (p) => p.startsWith("/design"),
     items: [
       {
-        label: "배너 제작",
+        label: "배너(현수막)",
         href: "/design/banner",
         icon: "image",
         match: (p) => p.startsWith("/design/banner"),
       },
       {
-        label: "사내 게시물 제작",
+        label: "사내 게시물",
         href: "/design/notice",
         icon: "campaign",
         match: (p) => p.startsWith("/design/notice"),
       },
       {
-        label: "AI 프롬프트 라이브러리",
-        href: "/design/prompts",
-        icon: "lightbulb",
-        match: (p) => p.startsWith("/design/prompts"),
+        label: "AI로 디자인 하기",
+        href: "/design/ai",
+        icon: "auto_fix_high",
+        match: (p) => p.startsWith("/design/ai") || p.startsWith("/design/prompts"),
+        children: [
+          {
+            label: "AI 프롬프트 라이브러리",
+            href: "/design/prompts",
+            icon: "lightbulb",
+            match: (p) => p.startsWith("/design/prompts"),
+          },
+          {
+            label: "AI로 생성하기",
+            href: "/design/ai/generate",
+            icon: "auto_awesome",
+            match: (p) => p.startsWith("/design/ai/generate"),
+          },
+        ],
       },
     ],
   },

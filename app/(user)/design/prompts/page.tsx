@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Icon } from "@/components/icon";
 import { type Prompt } from "@/lib/data";
 import { listPrompts } from "@/lib/store/prompts";
@@ -93,7 +94,13 @@ export default function PromptsLibraryPage() {
       <div>
         <div className="flex items-center gap-sm text-secondary text-label-sm mb-xs">
           <Icon name="auto_awesome" className="text-[14px]" />
-          <span>디자인 제작</span>
+          <Link href="/design" className="hover:text-primary transition-colors">
+            디자인 템플릿
+          </Link>
+          <Icon name="chevron_right" className="text-[14px]" />
+          <Link href="/design/ai" className="hover:text-primary transition-colors">
+            AI로 디자인 하기
+          </Link>
           <Icon name="chevron_right" className="text-[14px]" />
           <span className="text-primary font-semibold">AI 프롬프트 라이브러리</span>
         </div>

@@ -6,17 +6,30 @@ import { usePathname } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { userNav, type NavItem, type NavSection } from "@/lib/nav";
 
+/** 가장 안쪽 리프 메뉴 (depth 1·2·3 공통) */
 function NavLink({
   item,
   active,
-  indent,
+  depth,
 }: {
   item: NavItem;
   active: boolean;
-  indent: boolean;
+  depth: 1 | 2 | 3;
 }) {
-  const basePad = indent ? "pl-[36px]" : "pl-[20px]";
-  const activePad = indent ? "pl-[33px]" : "pl-[17px]";
+  const padByDepth = {
+    1: "pl-[20px]",
+    2: "pl-[36px]",
+    3: "pl-[52px]",
+  } as const;
+  const activePadByDepth = {
+    1: "pl-[17px]",
+    2: "pl-[33px]",
+    3: "pl-[49px]",
+  } as const;
+  const iconSize = depth === 1 ? "text-[22px]" : "text-[18px]";
+  const basePad = padByDepth[depth];
+  const activePad = activePadByDepth[depth];
+
   return (
     <Link
       href={item.href}
@@ -27,9 +40,85 @@ function NavLink({
           : `text-secondary ${basePad} hover:bg-surface-container-highest`)
       }
     >
-      <Icon name={item.icon} className={indent ? "text-[18px]" : "text-[22px]"} />
+      <Icon name={item.icon} className={iconSize} />
       <span className="text-[14px]">{item.label}</span>
     </Link>
+  );
+}
+
+/** depth=2 항목 — children 이 있으면 펼침/접기 토글, 없으면 일반 링크 */
+function NavItemWithChildren({
+  item,
+  pathname,
+  isActive,
+}: {
+  item: NavItem;
+  pathname: string;
+  isActive: (item: NavItem) => boolean;
+}) {
+  const hasChildren = !!item.children && item.children.length > 0;
+  const forceOpen =
+    hasChildren &&
+    !!item.children?.some((c) => isActive(c) || pathname.startsWith(c.href));
+  const [manualOpen, setManualOpen] = useState(forceOpen);
+  useEffect(() => {
+    if (forceOpen) setManualOpen(true);
+  }, [forceOpen]);
+
+  if (!hasChildren) {
+    return <NavLink item={item} active={isActive(item)} depth={2} />;
+  }
+
+  const headerActive = forceOpen || isActive(item);
+  const isOpen = manualOpen;
+  return (
+    <div>
+      <div
+        className={
+          "flex items-stretch h-10 " +
+          (headerActive ? "border-l-[3px] border-primary" : "")
+        }
+      >
+        <Link
+          href={item.href}
+          className={
+            "flex-1 flex items-center gap-md transition-colors " +
+            (headerActive
+              ? "text-primary font-semibold pl-[33px]"
+              : "text-secondary hover:bg-surface-container-highest pl-[36px]")
+          }
+        >
+          <Icon name={item.icon} className="text-[18px]" />
+          <span className="text-[14px]">{item.label}</span>
+        </Link>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            setManualOpen(!isOpen);
+          }}
+          className="px-md text-secondary hover:text-primary transition-colors"
+          aria-label={isOpen ? "메뉴 접기" : "메뉴 펼치기"}
+        >
+          <Icon
+            name={isOpen ? "expand_less" : "expand_more"}
+            className="text-[18px]"
+          />
+        </button>
+      </div>
+      {isOpen ? (
+        <div className="flex flex-col gap-xs mt-xs">
+          {item.children!.map((child) => (
+            <NavLink
+              key={child.href}
+              item={child}
+              active={isActive(child)}
+              depth={3}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -45,7 +134,6 @@ function CollapsibleSection({
   const forceOpen = section.openWhen?.(pathname) ?? false;
   const [manualOpen, setManualOpen] = useState(forceOpen);
 
-  // 경로가 하위 메뉴 영역으로 진입하면 자동으로 펼침
   useEffect(() => {
     if (forceOpen) setManualOpen(true);
   }, [forceOpen]);
@@ -54,7 +142,6 @@ function CollapsibleSection({
   const header = section.header;
   if (!header) return null;
 
-  // 헤더는 좌측 영역(아이콘+라벨, /design으로 이동) + 우측 chevron(토글) 분리
   const headerActive = forceOpen;
   return (
     <div>
@@ -106,11 +193,11 @@ function CollapsibleSection({
       {isOpen ? (
         <div className="flex flex-col gap-xs mt-xs">
           {section.items.map((item) => (
-            <NavLink
+            <NavItemWithChildren
               key={item.href}
               item={item}
-              active={isActive(item)}
-              indent={true}
+              pathname={pathname}
+              isActive={isActive}
             />
           ))}
         </div>
@@ -129,12 +216,7 @@ function PlainSection({
   return (
     <div className="flex flex-col gap-xs">
       {section.items.map((item) => (
-        <NavLink
-          key={item.href}
-          item={item}
-          active={isActive(item)}
-          indent={false}
-        />
+        <NavLink key={item.href} item={item} active={isActive(item)} depth={1} />
       ))}
     </div>
   );
@@ -160,11 +242,7 @@ export function UserSidebar({ role, email }: { role: "admin" | "viewer"; email: 
         {userNav.map((section, idx) => (
           <div key={idx}>
             {section.header ? (
-              <CollapsibleSection
-                section={section}
-                pathname={pathname}
-                isActive={isActive}
-              />
+              <CollapsibleSection section={section} pathname={pathname} isActive={isActive} />
             ) : (
               <PlainSection section={section} isActive={isActive} />
             )}
@@ -173,13 +251,6 @@ export function UserSidebar({ role, email }: { role: "admin" | "viewer"; email: 
       </nav>
 
       <div className="px-lg mt-auto flex flex-col gap-sm">
-        <Link
-          href="/my-requests/new"
-          className="w-full py-sm px-md bg-primary text-on-primary text-[13px] font-semibold rounded-xl hover:opacity-90 transition-opacity text-center"
-        >
-          새 에셋 요청
-        </Link>
-
         {role === "admin" ? (
           <Link
             href="/admin"

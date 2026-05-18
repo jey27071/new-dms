@@ -72,7 +72,7 @@ export default function MyRequestsPage() {
     <div className="max-w-[1040px] mx-auto space-y-lg">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-h1 font-semibold text-on-surface">내 요청</h1>
+          <h1 className="text-h1 font-semibold text-on-surface">디자인 제작 요청</h1>
           <p className="text-body-base text-on-surface-variant mt-xs">
             본인이 제출한 디자인 요청을 추적합니다.
           </p>

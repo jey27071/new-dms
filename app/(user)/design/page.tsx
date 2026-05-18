@@ -3,7 +3,7 @@ import { Icon } from "@/components/icon";
 
 const TOOLS = [
   {
-    title: "배너 제작",
+    title: "배너(현수막)",
     description: "관리자가 등록한 배너 템플릿을 선택해 문구만 수정하고 PNG로 즉시 다운로드.",
     href: "/design/banner",
     icon: "image",
@@ -11,7 +11,7 @@ const TOOLS = [
     accentText: "text-primary",
   },
   {
-    title: "사내 게시물 제작",
+    title: "사내 게시물",
     description: "공지·캠페인 템플릿 위에 텍스트를 얹어 게시용 이미지를 만듭니다.",
     href: "/design/notice",
     icon: "campaign",
@@ -19,10 +19,10 @@ const TOOLS = [
     accentText: "text-tertiary",
   },
   {
-    title: "AI 프롬프트 라이브러리",
-    description: "사내에서 검증된 ChatGPT·Midjourney·Claude 프롬프트를 검색·복사.",
-    href: "/design/prompts",
-    icon: "lightbulb",
+    title: "AI로 디자인 하기",
+    description: "사내 검증 프롬프트 라이브러리와 AI 이미지 생성 도구를 한 곳에서.",
+    href: "/design/ai",
+    icon: "auto_fix_high",
     accentBg: "bg-secondary-container",
     accentText: "text-on-secondary-fixed-variant",
   },
@@ -34,9 +34,9 @@ export default function DesignHubPage() {
       <div>
         <div className="flex items-center gap-sm text-secondary text-label-sm mb-xs">
           <Icon name="auto_awesome" className="text-[14px]" />
-          <span className="text-primary font-semibold">디자인 제작</span>
+          <span className="text-primary font-semibold">디자인 템플릿</span>
         </div>
-        <h1 className="text-h1 font-semibold text-on-surface">디자인 제작</h1>
+        <h1 className="text-h1 font-semibold text-on-surface">디자인 템플릿</h1>
         <p className="text-body-base text-on-surface-variant mt-xs max-w-2xl">
           템플릿 기반의 배너·사내 게시물 제작 도구와 생성형 AI 프롬프트 라이브러리를 한 곳에서
           이용하세요. 사용할 도구를 선택해 시작하시면 됩니다.
