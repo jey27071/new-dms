@@ -29,8 +29,8 @@ export default function LoginPage() {
             <div className="w-12 h-12 bg-primary-container rounded-lg flex items-center justify-center mb-sm">
               <Icon name="auto_awesome" className="text-on-primary-container text-[28px]" />
             </div>
-            <h1 className="text-h2 font-bold text-on-surface">DMS</h1>
-            <p className="text-body-sm text-on-surface-variant">Corporate BMS</p>
+            <h1 className="text-h2 font-bold text-on-surface">Design Management System</h1>
+            <p className="text-body-sm text-on-surface-variant">디자인 관리 시스템</p>
           </div>
 
           <form action={loginAction} className="w-full flex flex-col gap-lg">
