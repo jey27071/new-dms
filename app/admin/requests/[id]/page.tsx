@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
@@ -18,8 +18,11 @@ import {
   changeStatus,
   assignRequest,
   addComment,
+  updateCcEmails,
 } from "@/lib/store/requests";
 import { getClientEmail } from "@/lib/auth-client";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const STATUS_OPTIONS: { key: RequestStatus; label: string; icon: string }[] = [
   { key: "review", label: "검토 중", icon: "schedule" },
@@ -45,6 +48,13 @@ export default function AdminRequestDetailPage() {
   const [assigneeInput, setAssigneeInput] = useState("");
   const [assigning, setAssigning] = useState(false);
 
+  // CC 이메일 편집
+  const [ccDraft, setCcDraft] = useState<string[]>([]);
+  const [ccInput, setCcInput] = useState("");
+  const [ccDirty, setCcDirty] = useState(false);
+  const [ccSaving, setCcSaving] = useState(false);
+  const [ccError, setCcError] = useState<string | null>(null);
+
   useEffect(() => {
     setActorEmail(getClientEmail());
   }, []);
@@ -56,6 +66,8 @@ export default function AdminRequestDetailPage() {
     setActivities(acts);
     if (req) {
       setAssigneeInput(req.assigneeEmail ?? "");
+      setCcDraft(req.ccEmails);
+      setCcDirty(false);
     }
   }, [id]);
 
@@ -98,6 +110,47 @@ export default function AdminRequestDetailPage() {
     setComment("");
     await refresh();
     setPosting(false);
+  }
+
+  function addCcEmail() {
+    const value = ccInput.trim().toLowerCase();
+    if (!value) return;
+    if (!EMAIL_REGEX.test(value)) {
+      setCcError(`올바른 이메일 형식이 아닙니다: ${value}`);
+      return;
+    }
+    if (ccDraft.includes(value)) {
+      setCcInput("");
+      return;
+    }
+    setCcError(null);
+    setCcDraft((prev) => [...prev, value]);
+    setCcInput("");
+    setCcDirty(true);
+  }
+
+  function handleCcKey(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addCcEmail();
+    } else if (e.key === "Backspace" && ccInput === "" && ccDraft.length > 0) {
+      setCcDraft((prev) => prev.slice(0, -1));
+      setCcDirty(true);
+    }
+  }
+
+  function removeCc(email: string) {
+    setCcDraft((prev) => prev.filter((e) => e !== email));
+    setCcDirty(true);
+  }
+
+  async function saveCc() {
+    if (!id) return;
+    setCcSaving(true);
+    setCcError(null);
+    await updateCcEmails(id, ccDraft);
+    await refresh();
+    setCcSaving(false);
   }
 
   if (request === undefined) {
@@ -324,6 +377,62 @@ export default function AdminRequestDetailPage() {
                     : "담당자 배정"}
               </button>
             </div>
+          </div>
+
+          {/* CC 편집 */}
+          <div className="bg-white p-lg rounded-xl card-shadow border border-outline-variant/30">
+            <h3 className="text-h3 font-semibold mb-md flex items-center gap-sm">
+              <Icon name="mail" className="text-primary text-[20px]" />
+              참조 (CC)
+            </h3>
+            <p className="text-label-sm text-on-surface-variant mb-sm">
+              여기 등록된 이메일은 상태 변경·배정 등 모든 알림에 함께 발송됩니다.
+            </p>
+            <div className="border border-outline-variant rounded-lg p-sm flex flex-wrap gap-xs items-center min-h-[48px] bg-white">
+              {ccDraft.map((email) => (
+                <span
+                  key={email}
+                  className="inline-flex items-center gap-xs bg-primary-fixed text-on-primary-fixed-variant px-sm py-xs rounded-full text-label-sm"
+                >
+                  {email}
+                  <button
+                    type="button"
+                    onClick={() => removeCc(email)}
+                    className="hover:text-error transition-colors"
+                  >
+                    <Icon name="close" className="text-[14px]" />
+                  </button>
+                </span>
+              ))}
+              <input
+                type="email"
+                value={ccInput}
+                onChange={(e) => setCcInput(e.target.value)}
+                onKeyDown={handleCcKey}
+                onBlur={addCcEmail}
+                placeholder={ccDraft.length === 0 ? "이메일 + Enter / 쉼표" : ""}
+                className="flex-1 min-w-[140px] bg-transparent outline-none text-body-sm font-mono px-xs"
+              />
+            </div>
+            {ccError ? (
+              <p className="text-label-sm text-error mt-xs">{ccError}</p>
+            ) : null}
+            <button
+              type="button"
+              onClick={saveCc}
+              disabled={!ccDirty || ccSaving}
+              className="w-full mt-md bg-primary text-on-primary py-sm rounded-lg text-label-sm font-semibold hover:brightness-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-sm"
+            >
+              <Icon
+                name={ccSaving ? "hourglass_empty" : "save"}
+                className="text-[18px]"
+              />
+              {ccSaving
+                ? "저장 중..."
+                : ccDirty
+                  ? "CC 저장"
+                  : "변경사항 없음"}
+            </button>
           </div>
         </aside>
       </div>

@@ -1,5 +1,5 @@
 // 이메일 알림 API 라우트 (Resend)
-// 요청 생성·담당자 배정·상태 변경 시 호출됨
+// 요청 생성·담당자 배정·상태 변경 시 호출됨. CC 다중 수신자 처리 포함.
 
 import { NextRequest } from "next/server";
 import { Resend } from "resend";
@@ -15,6 +15,9 @@ type Body =
       deadline?: string;
       requesterEmail: string;
       requesterName?: string;
+      assigneeEmail?: string;
+      assigneeName?: string;
+      ccEmails?: string[];
     }
   | {
       type: "request_assigned";
@@ -24,6 +27,7 @@ type Body =
       assigneeName?: string;
       requesterEmail: string;
       requesterName?: string;
+      ccEmails?: string[];
     }
   | {
       type: "status_changed";
@@ -34,6 +38,9 @@ type Body =
       note?: string;
       requesterEmail: string;
       requesterName?: string;
+      assigneeEmail?: string;
+      assigneeName?: string;
+      ccEmails?: string[];
       actorEmail: string;
     };
 
@@ -65,6 +72,22 @@ function escape(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+/** to 주소를 제외하고 중복 없는 CC 목록을 만듦 */
+function buildCc(to: string, extras: (string | undefined | null)[]): string[] {
+  const toNorm = to.toLowerCase().trim();
+  const seen = new Set<string>([toNorm]);
+  const result: string[] = [];
+  for (const raw of extras) {
+    if (!raw) continue;
+    const value = raw.toLowerCase().trim();
+    if (!value || seen.has(value)) continue;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) continue;
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
 }
 
 function emailShell(opts: {
@@ -139,7 +162,7 @@ function emailShell(opts: {
 export async function POST(req: NextRequest) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM;
-  const adminEmail = process.env.ADMIN_NOTIFY_EMAIL;
+  const adminFallback = process.env.ADMIN_NOTIFY_EMAIL;
 
   if (!apiKey || !from) {
     return Response.json(
@@ -160,17 +183,19 @@ export async function POST(req: NextRequest) {
 
   try {
     if (body.type === "request_created") {
-      // 새 요청 등록 — 관리자에게 알림 (ADMIN_NOTIFY_EMAIL)
-      if (!adminEmail) {
+      // 수신자: 승인자(매핑 결과) → 없으면 ADMIN_NOTIFY_EMAIL
+      const toEmail = body.assigneeEmail || adminFallback;
+      if (!toEmail) {
         return Response.json(
-          { ok: false, error: "ADMIN_NOTIFY_EMAIL 환경변수가 없습니다." },
-          { status: 200 }, // 200 — 알림 실패해도 요청 자체는 OK
+          { ok: false, error: "수신자가 없습니다 (ADMIN_NOTIFY_EMAIL 미설정)." },
+          { status: 200 },
         );
       }
+      const cc = buildCc(toEmail, [body.requesterEmail, ...(body.ccEmails ?? [])]);
       const html = emailShell({
         preheader: `새 요청: ${body.title}`,
         title: "새 디자인 요청이 등록되었습니다",
-        intro: `${escape(body.requesterName ?? body.requesterEmail)}님이 새 요청을 제출했습니다. 관리자 콘솔에서 검토·배정해주세요.`,
+        intro: `${escape(body.requesterName ?? body.requesterEmail)}님이 새 요청을 제출했습니다. 관리자 콘솔에서 검토·처리해주세요.`,
         rows: [
           { label: "요청 ID", value: body.requestId },
           { label: "제목", value: body.title },
@@ -178,6 +203,14 @@ export async function POST(req: NextRequest) {
           ...(body.category ? [{ label: "카테고리", value: body.category }] : []),
           ...(body.deadline ? [{ label: "마감일", value: body.deadline }] : []),
           { label: "요청자", value: `${body.requesterName ?? ""} <${body.requesterEmail}>`.trim() },
+          ...(body.assigneeEmail
+            ? [
+                {
+                  label: "지정 승인자",
+                  value: `${body.assigneeName ?? ""} <${body.assigneeEmail}>`.trim(),
+                },
+              ]
+            : []),
         ],
         noteHtml: body.description ? escape(body.description).replace(/\n/g, "<br>") : undefined,
         cta: {
@@ -187,17 +220,20 @@ export async function POST(req: NextRequest) {
       });
       const result = await resend.emails.send({
         from,
-        to: adminEmail,
+        to: toEmail,
+        cc: cc.length > 0 ? cc : undefined,
         subject: `[SDMS] 새 요청 · ${body.title}`,
         html,
       });
-      return Response.json({ ok: true, id: result.data?.id });
+      return Response.json({ ok: true, id: result.data?.id, to: toEmail, cc });
     }
 
     if (body.type === "request_assigned") {
+      const toEmail = body.assigneeEmail;
+      const cc = buildCc(toEmail, [body.requesterEmail, ...(body.ccEmails ?? [])]);
       const html = emailShell({
         preheader: `담당 요청 배정: ${body.title}`,
-        title: "디자인 요청에 담당자로 배정되었습니다",
+        title: "디자인 요청에 승인자로 배정되었습니다",
         intro: `${escape(body.requesterName ?? body.requesterEmail)}님의 디자인 요청 처리에 배정되었습니다.`,
         rows: [
           { label: "요청 ID", value: body.requestId },
@@ -211,24 +247,35 @@ export async function POST(req: NextRequest) {
       });
       const result = await resend.emails.send({
         from,
-        to: body.assigneeEmail,
+        to: toEmail,
+        cc: cc.length > 0 ? cc : undefined,
         subject: `[SDMS] 담당 배정 · ${body.title}`,
         html,
       });
-      return Response.json({ ok: true, id: result.data?.id });
+      return Response.json({ ok: true, id: result.data?.id, to: toEmail, cc });
     }
 
     if (body.type === "status_changed") {
+      const toEmail = body.requesterEmail;
+      const cc = buildCc(toEmail, [body.assigneeEmail, ...(body.ccEmails ?? [])]);
       const fromLabel = STATUS_LABEL[body.from] ?? body.from;
       const toLabel = STATUS_LABEL[body.to] ?? body.to;
       const html = emailShell({
         preheader: `상태 변경: ${fromLabel} → ${toLabel}`,
         title: "디자인 요청 상태가 변경되었습니다",
-        intro: `귀하가 제출한 요청의 상태가 <strong>${escape(fromLabel)}</strong> → <strong>${escape(toLabel)}</strong> 으로 변경되었습니다.`,
+        intro: `요청의 상태가 <strong>${escape(fromLabel)}</strong> → <strong>${escape(toLabel)}</strong> 으로 변경되었습니다.`,
         rows: [
           { label: "요청 ID", value: body.requestId },
           { label: "제목", value: body.title },
           { label: "변경자", value: body.actorEmail },
+          ...(body.assigneeEmail
+            ? [
+                {
+                  label: "승인자",
+                  value: `${body.assigneeName ?? ""} <${body.assigneeEmail}>`.trim(),
+                },
+              ]
+            : []),
         ],
         noteHtml: body.note ? escape(body.note).replace(/\n/g, "<br>") : undefined,
         cta: {
@@ -238,11 +285,12 @@ export async function POST(req: NextRequest) {
       });
       const result = await resend.emails.send({
         from,
-        to: body.requesterEmail,
+        to: toEmail,
+        cc: cc.length > 0 ? cc : undefined,
         subject: `[SDMS] 상태 변경 · ${body.title}`,
         html,
       });
-      return Response.json({ ok: true, id: result.data?.id });
+      return Response.json({ ok: true, id: result.data?.id, to: toEmail, cc });
     }
 
     return Response.json({ ok: false, error: "알 수 없는 알림 타입" }, { status: 400 });

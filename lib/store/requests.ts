@@ -320,6 +320,24 @@ export async function addComment(
   });
 }
 
+export async function updateCcEmails(
+  requestId: string,
+  ccEmails: string[],
+): Promise<DesignRequest | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("requests")
+    .update({ cc_emails: ccEmails, updated_at: new Date().toISOString() })
+    .eq("id", requestId)
+    .select()
+    .single();
+  if (error) {
+    console.error("[updateCcEmails]", error);
+    return null;
+  }
+  return fromRequestRow(data as RequestRow);
+}
+
 // ===== 활동 로그 =====
 
 export async function listActivities(requestId: string): Promise<RequestActivity[]> {

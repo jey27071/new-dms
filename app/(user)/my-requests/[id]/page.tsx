@@ -206,6 +206,26 @@ export default function MyRequestDetailPage() {
             <p className="text-body-base">{request.requesterName ?? request.requesterEmail.split("@")[0]}</p>
             <p className="text-label-sm text-on-surface-variant">{request.requesterEmail}</p>
           </div>
+
+          {request.ccEmails.length > 0 ? (
+            <div className="bg-white p-lg rounded-xl card-shadow border border-outline-variant/30">
+              <h3 className="text-h3 font-semibold mb-md flex items-center gap-sm">
+                <Icon name="mail" className="text-primary text-[20px]" />
+                참조 (CC)
+              </h3>
+              <ul className="space-y-xs">
+                {request.ccEmails.map((email) => (
+                  <li key={email} className="flex items-center gap-sm text-body-sm">
+                    <Icon name="alternate_email" className="text-secondary text-[16px]" />
+                    <span className="font-mono">{email}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-label-sm text-on-surface-variant mt-md">
+                이 이메일들은 진행 상황 변경 시 알림을 함께 받습니다.
+              </p>
+            </div>
+          ) : null}
         </aside>
       </div>
     </div>
