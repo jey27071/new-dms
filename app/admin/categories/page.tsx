@@ -11,6 +11,7 @@ import {
   type Category,
   type CategoryDomain,
 } from "@/lib/store/categories";
+import { AssetCategoryTreeEditor } from "@/components/asset-category-tree-editor";
 
 const DOMAINS: { key: CategoryDomain; label: string; description: string }[] = [
   {
@@ -158,6 +159,10 @@ export default function AdminCategoriesPage() {
           <p className="text-label-sm text-on-surface-variant mt-xs">{currentDomain?.description}</p>
         </div>
 
+        {activeDomain === "asset" ? (
+          <AssetCategoryTreeEditor />
+        ) : (
+        <>
         <div className="p-lg border-b border-outline-variant/30 flex gap-sm">
           <input
             type="text"
@@ -268,6 +273,8 @@ export default function AdminCategoriesPage() {
             </ul>
           )}
         </div>
+        </>
+        )}
       </div>
 
       {confirmDeleteId ? (

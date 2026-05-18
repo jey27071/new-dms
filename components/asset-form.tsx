@@ -16,7 +16,12 @@ import {
   uploadAssetImage,
   type AssetInput,
 } from "@/lib/store/assets";
-import { listCategories, type Category } from "@/lib/store/categories";
+import {
+  listCategories,
+  buildCategoryTree,
+  type Category,
+  type CategoryNode,
+} from "@/lib/store/categories";
 
 const ALL_FORMATS: AssetFormat[] = ["AI", "PNG", "PDF", "SVG", "EPS", "ZIP", "MP4", "FIG", "ASE"];
 
@@ -36,7 +41,8 @@ export function AssetForm({ mode, initial, uploader }: Props) {
   const initialCategory = initial?.category
     ? getAssetCategoryLabel(initial.category)
     : DEFAULT_ASSET_CATEGORIES[0];
-  const [categories, setCategories] = useState<string[]>([...DEFAULT_ASSET_CATEGORIES]);
+  const [tree, setTree] = useState<CategoryNode[]>([]);
+  const [selectedRootId, setSelectedRootId] = useState<string | null>(null);
   const [category, setCategory] = useState<string>(initialCategory);
   const [formats, setFormats] = useState<AssetFormat[]>(initial?.formats ?? ["PNG"]);
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -45,18 +51,33 @@ export function AssetForm({ mode, initial, uploader }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // DB의 에셋 카테고리 목록 불러오기 (있으면 기본값 대체)
+  // DB의 에셋 카테고리 트리 불러오기
   useEffect(() => {
     let cancelled = false;
     listCategories("asset").then((list: Category[]) => {
       if (cancelled) return;
-      const labels = list.map((c) => c.label);
-      if (labels.length > 0) {
-        setCategories(labels);
-        // 기존 category가 목록에 없으면(=관리자가 삭제했으면) 첫 항목 추천 (create 모드만)
-        if (!labels.includes(category) && mode === "create") {
-          setCategory(labels[0]!);
+      const t = buildCategoryTree(list);
+      setTree(t);
+      // 초기 선택 결정: 현재 category 라벨이 어느 노드인지 찾기
+      let foundRoot: CategoryNode | null = null;
+      for (const root of t) {
+        if (root.label === category) {
+          foundRoot = root;
+          break;
         }
+        const child = root.children.find((c) => c.label === category);
+        if (child) {
+          foundRoot = root;
+          break;
+        }
+      }
+      if (foundRoot) {
+        setSelectedRootId(foundRoot.id);
+      } else if (mode === "create" && t.length > 0) {
+        // 신규: 첫 대분류의 첫 항목(소분류 있으면 첫 소분류, 없으면 대분류 자체)
+        const first = t[0]!;
+        setSelectedRootId(first.id);
+        setCategory(first.children[0]?.label ?? first.label);
       }
     });
     return () => {
@@ -64,6 +85,8 @@ export function AssetForm({ mode, initial, uploader }: Props) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const selectedRoot = tree.find((n) => n.id === selectedRootId);
 
   // 이미지 상태
   // - existingUrl: 편집 모드일 때 기존 이미지 URL
@@ -291,28 +314,83 @@ export function AssetForm({ mode, initial, uploader }: Props) {
           />
         </div>
 
-        {/* 카테고리 */}
+        {/* 카테고리 (2단계: 대분류 → 소분류) */}
         <div className="space-y-xs">
           <label className="text-label-caps text-on-surface-variant">
             카테고리 <span className="text-error">*</span>
           </label>
-          <div className="flex flex-wrap gap-sm">
-            {categories.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCategory(c)}
-                className={
-                  "px-md py-sm rounded-lg text-label-sm transition-all border " +
-                  (category === c
-                    ? "bg-primary text-on-primary border-primary"
-                    : "bg-white text-on-surface border-outline-variant hover:bg-surface-container-low")
-                }
-              >
-                {c}
-              </button>
-            ))}
-          </div>
+          {tree.length === 0 ? (
+            <p className="text-body-sm text-secondary py-sm">
+              등록된 카테고리가 없습니다. 관리자 → 카테고리 설정 → 에셋 카테고리에서 추가해주세요.
+            </p>
+          ) : (
+            <div className="space-y-sm">
+              {/* 대분류 */}
+              <div>
+                <p className="text-label-sm text-secondary mb-xs">대분류</p>
+                <div className="flex flex-wrap gap-sm">
+                  {tree.map((root) => (
+                    <button
+                      key={root.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedRootId(root.id);
+                        // 대분류 바꿀 때: 소분류 있으면 첫 소분류 자동 선택, 없으면 대분류 자체
+                        setCategory(root.children[0]?.label ?? root.label);
+                      }}
+                      className={
+                        "px-md py-sm rounded-lg text-label-sm transition-all border " +
+                        (selectedRootId === root.id
+                          ? "bg-primary text-on-primary border-primary"
+                          : "bg-white text-on-surface border-outline-variant hover:bg-surface-container-low")
+                      }
+                    >
+                      {root.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* 소분류 (있는 경우만) */}
+              {selectedRoot && selectedRoot.children.length > 0 ? (
+                <div>
+                  <p className="text-label-sm text-secondary mb-xs">소분류</p>
+                  <div className="flex flex-wrap gap-sm">
+                    {/* 대분류 자체도 선택 가능 (소분류 없이 대분류로 저장) */}
+                    <button
+                      type="button"
+                      onClick={() => setCategory(selectedRoot.label)}
+                      className={
+                        "px-md py-xs rounded-lg text-label-sm transition-all border " +
+                        (category === selectedRoot.label
+                          ? "bg-secondary-container text-on-secondary-fixed-variant border-secondary-fixed font-semibold"
+                          : "bg-white text-secondary border-outline-variant border-dashed hover:bg-surface-container-low")
+                      }
+                    >
+                      {selectedRoot.label} (대분류로 저장)
+                    </button>
+                    {selectedRoot.children.map((child) => (
+                      <button
+                        key={child.id}
+                        type="button"
+                        onClick={() => setCategory(child.label)}
+                        className={
+                          "px-md py-xs rounded-lg text-label-sm transition-all border " +
+                          (category === child.label
+                            ? "bg-primary text-on-primary border-primary"
+                            : "bg-white text-on-surface border-outline-variant hover:bg-surface-container-low")
+                        }
+                      >
+                        {child.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              <p className="text-label-sm text-secondary">
+                현재 선택: <span className="font-semibold text-primary">{category || "없음"}</span>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 포맷 */}

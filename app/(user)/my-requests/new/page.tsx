@@ -1,13 +1,14 @@
 "use client";
 
 import {
+  Suspense,
   useEffect,
   useState,
   type ChangeEvent,
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
 import {
@@ -35,9 +36,23 @@ const STEPS = [
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function SubmitRequestPage() {
+export default function SubmitRequestPageWrapper() {
+  // useSearchParams 는 Next.js 14 빌드 정적화에서 Suspense 경계가 필요
+  return (
+    <Suspense fallback={null}>
+      <SubmitRequestPage />
+    </Suspense>
+  );
+}
+
+function SubmitRequestPage() {
   const router = useRouter();
-  const [type, setType] = useState<RequestType>("guide_inquiry");
+  const searchParams = useSearchParams();
+  const queryType = searchParams.get("type") as RequestType | null;
+  const initialType: RequestType = TYPES.includes(queryType as RequestType)
+    ? (queryType as RequestType)
+    : "guide_inquiry";
+  const [type, setType] = useState<RequestType>(initialType);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");

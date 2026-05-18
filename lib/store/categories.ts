@@ -9,13 +9,19 @@ export type Category = {
   domain: CategoryDomain;
   label: string;
   sortOrder: number;
+  /** 부모 카테고리 ID. null = 대분류, 값 있음 = 소분류 */
+  parentId: string | null;
 };
+
+/** 트리 표현: children 배열로 자식들을 묶은 형태 */
+export type CategoryNode = Category & { children: CategoryNode[] };
 
 type Row = {
   id: string;
   domain: string;
   label: string;
   sort_order: number;
+  parent_id: string | null;
   created_at: string;
 };
 
@@ -25,7 +31,30 @@ function fromRow(row: Row): Category {
     domain: row.domain as CategoryDomain,
     label: row.label,
     sortOrder: row.sort_order,
+    parentId: row.parent_id ?? null,
   };
+}
+
+/** flat list → 2단계 트리 (parent_id 기준). 깊이는 2단계까지만 사용 */
+export function buildCategoryTree(flat: Category[]): CategoryNode[] {
+  const byId = new Map<string, CategoryNode>();
+  for (const c of flat) {
+    byId.set(c.id, { ...c, children: [] });
+  }
+  const roots: CategoryNode[] = [];
+  for (const c of flat) {
+    const node = byId.get(c.id)!;
+    if (c.parentId && byId.has(c.parentId)) {
+      byId.get(c.parentId)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+  // sort_order 기준 정렬
+  const sortFn = (a: CategoryNode, b: CategoryNode) => a.sortOrder - b.sortOrder;
+  roots.sort(sortFn);
+  for (const r of roots) r.children.sort(sortFn);
+  return roots;
 }
 
 function genId(domain: CategoryDomain): string {
@@ -50,15 +79,22 @@ export async function listCategories(domain: CategoryDomain): Promise<Category[]
 export async function createCategory(
   domain: CategoryDomain,
   label: string,
+  parentId?: string | null,
 ): Promise<Category | null> {
   const supabase = createClient();
-  // 새 항목은 끝에 추가 (max sort_order + 1)
-  const { data: existing } = await supabase
+  // 새 항목은 같은 부모 그룹 내에서 끝에 추가 (max sort_order + 1)
+  const query = supabase
     .from("categories")
     .select("sort_order")
     .eq("domain", domain)
     .order("sort_order", { ascending: false })
     .limit(1);
+  if (parentId) {
+    query.eq("parent_id", parentId);
+  } else {
+    query.is("parent_id", null);
+  }
+  const { data: existing } = await query;
   const order = ((existing as { sort_order: number }[] | null)?.[0]?.sort_order ?? 0) + 1;
 
   const row = {
@@ -66,6 +102,7 @@ export async function createCategory(
     domain,
     label: label.trim(),
     sort_order: order,
+    parent_id: parentId ?? null,
   };
   const { data, error } = await supabase
     .from("categories")
