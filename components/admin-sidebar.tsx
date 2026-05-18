@@ -39,7 +39,7 @@ export function AdminSidebar({ email }: { email: string }) {
               ADMIN
             </span>
           </div>
-          <p className="text-label-sm text-secondary mt-xs">관리자 콘솔 · Design Management System</p>
+          <p className="text-label-sm text-secondary mt-xs">Design Management System</p>
         </Link>
       </div>
 

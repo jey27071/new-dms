@@ -40,12 +40,7 @@ export function Topbar({ area }: TopbarProps) {
             {isAdmin ? "관리자" : "뷰어"}
           </span>
         </div>
-        {isAdmin ? (
-          <>
-            <div className="h-8 w-[1px] bg-outline-variant mx-xs" />
-            <p className="text-body-base font-semibold text-on-surface">브랜드 관리 시스템</p>
-          </>
-        ) : null}
+{null}
       </div>
     </header>
   );

@@ -258,20 +258,20 @@ export default function AdminRequestDetailPage() {
               >
                 댓글 남기기 (요청자에게 전달됩니다)
               </label>
-              <div className="relative">
-                <textarea
-                  id="comment"
-                  rows={3}
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="진행 상황·추가 정보 요청 등 자유롭게 작성"
-                  className="w-full bg-surface-bright border border-outline-variant rounded-lg p-md text-body-sm focus:ring-1 focus:ring-primary focus:border-primary resize-none outline-none"
-                />
+              <textarea
+                id="comment"
+                rows={3}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="진행 상황·추가 정보 요청 등 자유롭게 작성"
+                className="w-full bg-surface-bright border border-outline-variant rounded-lg p-md text-body-sm focus:ring-1 focus:ring-primary focus:border-primary resize-none outline-none"
+              />
+              <div className="flex justify-end mt-sm">
                 <button
                   type="button"
                   onClick={handleComment}
                   disabled={!comment.trim() || posting}
-                  className="absolute bottom-2 right-2 px-md py-xs bg-primary text-on-primary rounded-lg hover:brightness-95 transition-all text-label-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-xs"
+                  className="px-lg py-sm bg-primary text-on-primary rounded-lg hover:brightness-95 transition-all text-label-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-xs"
                 >
                   <Icon name="send" className="text-[16px]" />
                   {posting ? "등록 중..." : "등록"}
