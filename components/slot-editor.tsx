@@ -111,6 +111,7 @@ export function SlotEditor({
 
   useEffect(() => {
     if (!dragInfo) return;
+    const info = dragInfo; // 클로저용 non-null 캡쳐
 
     function onMove(e: globalThis.MouseEvent) {
       if (!containerRef.current) return;
@@ -123,11 +124,11 @@ export function SlotEditor({
       const useSnap = !e.shiftKey;
       const snapTo = (v: number) => (useSnap ? snap(v, SNAP) : Math.round(v * 10) / 10);
 
-      const currentRefs = dragInfo.key === "headline" ? headlineRef : subtitleRef;
-      const otherRefs = dragInfo.key === "headline" ? subtitleRef : headlineRef;
+      const currentRefs = info.key === "headline" ? headlineRef : subtitleRef;
+      const otherRefs = info.key === "headline" ? subtitleRef : headlineRef;
 
       let updated: BannerSlot;
-      if (dragInfo.mode === "move") {
+      if (info.mode === "move") {
         const newLeft = clamp(snapTo(dragStart.current.left + dxPct), 0, 100);
         const newTop = clamp(snapTo(dragStart.current.top + dyPct), 0, 100);
         updated = { ...currentRefs.current, top: newTop, left: newLeft };
@@ -139,7 +140,7 @@ export function SlotEditor({
         setLivePos({ top: updated.top, left: updated.left, width: newWidth });
       }
 
-      if (dragInfo.key === "headline") {
+      if (info.key === "headline") {
         onChangeRef.current({ headline: updated, subtitle: otherRefs.current });
       } else {
         onChangeRef.current({ headline: otherRefs.current, subtitle: updated });
