@@ -8,7 +8,7 @@ import {
   type RequestStatus,
   type RequestType,
 } from "@/lib/data";
-import { getApproverFor } from "@/lib/store/notification-settings";
+import { getApproversFor } from "@/lib/store/admins";
 
 const STORAGE_BUCKET = "assets";
 
@@ -147,16 +147,19 @@ export async function createRequest(input: RequestInput): Promise<DesignRequest 
   const supabase = createClient();
   const id = genRequestId();
 
-  // 승인자 자동 조회: input에 없으면 notification_settings에서 매핑된 승인자 사용
+  // 승인자 자동 조회: 요청 유형에 구독된 관리자 전원
+  // 첫 번째 사람을 메인 담당자(assignee)로 기록, 나머지는 알림 CC로 추가
+  const subscribers = await getApproversFor(input.type);
   let assigneeEmail = input.assigneeEmail ?? null;
   let assigneeName = input.assigneeName ?? null;
-  if (!assigneeEmail) {
-    const setting = await getApproverFor(input.type);
-    if (setting) {
-      assigneeEmail = setting.approverEmail;
-      assigneeName = setting.approverName ?? null;
-    }
+  if (!assigneeEmail && subscribers.length > 0) {
+    assigneeEmail = subscribers[0]!.email;
+    assigneeName = subscribers[0]!.name ?? null;
   }
+  // 1번째 이후 구독자는 추가 수신자로 전달
+  const extraApproverEmails = subscribers
+    .slice(input.assigneeEmail ? 0 : 1)
+    .map((s) => s.email);
 
   const row = {
     id,
@@ -189,7 +192,7 @@ export async function createRequest(input: RequestInput): Promise<DesignRequest 
       type: input.type,
     },
   });
-  // 이메일 알림 — 자동 조회된 승인자 포함, CC도 함께
+  // 이메일 알림 — 자동 조회된 승인자(메인 + 추가 구독자) 포함, CC도 함께
   notify({
     type: "request_created",
     requestId: id,
@@ -202,7 +205,7 @@ export async function createRequest(input: RequestInput): Promise<DesignRequest 
     requesterName: input.requesterName,
     assigneeEmail: assigneeEmail ?? undefined,
     assigneeName: assigneeName ?? undefined,
-    ccEmails: input.ccEmails ?? [],
+    ccEmails: [...(input.ccEmails ?? []), ...extraApproverEmails],
   });
   return fromRequestRow(data as RequestRow);
 }

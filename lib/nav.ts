@@ -97,12 +97,6 @@ export const adminNav: NavSection[] = [
         match: (p) => p.startsWith("/admin/prompts"),
       },
       {
-        label: "알림 설정",
-        href: "/admin/notifications",
-        icon: "notifications_active",
-        match: (p) => p.startsWith("/admin/notifications"),
-      },
-      {
         label: "모든 요청",
         href: "/admin/requests",
         icon: "list_alt",

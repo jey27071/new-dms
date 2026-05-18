@@ -20,10 +20,7 @@ import {
   uploadRequestAttachment,
   type RequestInput,
 } from "@/lib/store/requests";
-import {
-  getApproverFor,
-  type NotificationSetting,
-} from "@/lib/store/notification-settings";
+import { getApproversFor } from "@/lib/store/admins";
 import { listCategories, type Category } from "@/lib/store/categories";
 import { getClientEmail } from "@/lib/auth-client";
 
@@ -51,8 +48,8 @@ export default function SubmitRequestPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // 자동 승인자 미리보기
-  const [approver, setApprover] = useState<NotificationSetting | null>(null);
+  // 자동 승인자 미리보기 (다대다 — 최대 10명)
+  const [approvers, setApprovers] = useState<{ email: string; name?: string }[]>([]);
   const [approverLoading, setApproverLoading] = useState(true);
 
   // CC 이메일
@@ -79,13 +76,13 @@ export default function SubmitRequestPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 요청 유형 바뀔 때마다 승인자 매핑 조회
+  // 요청 유형 바뀔 때마다 구독 관리자 목록 조회
   useEffect(() => {
     let cancelled = false;
     setApproverLoading(true);
-    getApproverFor(type).then((result) => {
+    getApproversFor(type).then((result) => {
       if (!cancelled) {
-        setApprover(result);
+        setApprovers(result);
         setApproverLoading(false);
       }
     });
@@ -225,31 +222,43 @@ export default function SubmitRequestPage() {
                   </label>
                 ))}
               </div>
-              {/* 자동 승인자 미리보기 */}
+              {/* 자동 승인자 미리보기 (다대다) */}
               {approverLoading ? (
                 <div className="bg-surface-container-low rounded-lg p-md flex items-center gap-sm">
                   <Icon name="hourglass_empty" className="text-secondary text-[18px]" />
-                  <span className="text-body-sm text-secondary">승인자 확인 중...</span>
+                  <span className="text-body-sm text-secondary">수신자 확인 중...</span>
                 </div>
-              ) : approver ? (
-                <div className="bg-primary-fixed/40 border border-primary/20 rounded-lg p-md flex items-center gap-sm">
-                  <Icon name="person_pin" className="text-primary text-[20px]" />
-                  <span className="text-body-sm text-on-surface">
-                    이 요청은{" "}
-                    <strong className="text-primary">
-                      {approver.approverName ?? approver.approverEmail.split("@")[0]}
-                    </strong>
-                    에게 전달됩니다
-                    <span className="text-secondary ml-xs font-mono text-label-sm">
-                      ({approver.approverEmail})
+              ) : approvers.length > 0 ? (
+                <div className="bg-primary-fixed/40 border border-primary/20 rounded-lg p-md">
+                  <div className="flex items-center gap-sm mb-xs">
+                    <Icon name="person_pin" className="text-primary text-[20px]" />
+                    <span className="text-body-sm text-on-surface">
+                      이 요청은 다음 {approvers.length}명의 관리자에게 전달됩니다
                     </span>
-                  </span>
+                  </div>
+                  <ul className="ml-xl space-y-xs">
+                    {approvers.map((a, idx) => (
+                      <li key={a.email} className="text-body-sm text-on-surface">
+                        <strong className="text-primary">
+                          {a.name ?? a.email.split("@")[0]}
+                        </strong>
+                        <span className="text-secondary ml-xs font-mono text-label-sm">
+                          ({a.email})
+                        </span>
+                        {idx === 0 ? (
+                          <span className="ml-xs px-xs py-[1px] bg-primary text-on-primary text-label-sm rounded">
+                            주담당
+                          </span>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               ) : (
                 <div className="bg-surface-container-low rounded-lg p-md flex items-center gap-sm">
                   <Icon name="info" className="text-secondary text-[18px]" />
                   <span className="text-body-sm text-secondary">
-                    이 유형에 매핑된 승인자가 없습니다. 관리자가 검토 후 직접 배정합니다.
+                    이 유형에 구독된 관리자가 없습니다. 관리자가 검토 후 직접 배정합니다.
                   </span>
                 </div>
               )}

@@ -6,9 +6,6 @@ type TopbarProps = {
 
 export function Topbar({ area }: TopbarProps) {
   const isAdmin = area === "admin";
-  const roleClass = isAdmin
-    ? "bg-error-container text-on-error-container"
-    : "bg-secondary-container text-on-secondary-fixed-variant";
 
   return (
     <header className="fixed top-0 right-0 w-[calc(100%-240px)] h-16 bg-surface border-b border-outline-variant flex justify-between items-center px-xl z-30">
@@ -33,14 +30,6 @@ export function Topbar({ area }: TopbarProps) {
             3
           </span>
         </button>
-        <div className="h-8 w-[1px] bg-outline-variant mx-xs" />
-        <div className={`flex items-center gap-xs px-md py-xs rounded-full ${roleClass}`}>
-          {isAdmin ? <Icon name="verified_user" className="text-[16px]" /> : null}
-          <span className="text-label-sm font-semibold uppercase tracking-wider">
-            {isAdmin ? "관리자" : "뷰어"}
-          </span>
-        </div>
-{null}
       </div>
     </header>
   );

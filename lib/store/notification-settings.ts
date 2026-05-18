@@ -1,4 +1,6 @@
-// 요청 유형별 자동 승인자 매핑 데이터 접근 계층
+// [DEPRECATED] Phase J 부터 lib/store/admins.ts 로 이관됨.
+// notification_settings 테이블은 SQL 마이그레이션에서 admins+subscriptions로
+// 옮겨졌습니다. 이 파일은 외부 참조가 없으므로 차후 안전하게 삭제 가능합니다.
 
 import { createClient } from "@/lib/supabase/client";
 import { type RequestType } from "@/lib/data";

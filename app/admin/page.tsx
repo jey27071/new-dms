@@ -263,11 +263,11 @@ export default function AdminDashboardPage() {
             카테고리 관리
           </Link>
           <Link
-            href="/admin/notifications"
+            href="/admin/users"
             className="flex items-center gap-md bg-secondary-container text-on-secondary-fixed-variant px-xl py-md rounded-lg text-h3 font-semibold hover:brightness-95 active:scale-95 transition-all"
           >
-            <Icon name="notifications_active" />
-            알림 설정
+            <Icon name="group" />
+            사용자 관리
           </Link>
         </div>
       </div>

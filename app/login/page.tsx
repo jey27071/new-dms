@@ -2,13 +2,17 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Icon } from "@/components/icon";
-import { ROLE_COOKIE, EMAIL_COOKIE, roleFromEmail } from "@/lib/auth";
+import { ROLE_COOKIE, EMAIL_COOKIE } from "@/lib/auth";
+import { isEmailAdmin } from "@/lib/store/admins";
 
 async function loginAction(formData: FormData) {
   "use server";
-  const email = String(formData.get("email") ?? "").trim();
-  const role = roleFromEmail(email || "viewer@dms.local");
-  const finalEmail = email || (role === "admin" ? "admin@dms.local" : "viewer@dms.local");
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const finalEmail = email || "viewer@dms.local";
+  // 관리자 권한은 admins 테이블에 등록되어 있는지로 판정
+  // (SSO 연동 후에도 같은 로직 사용 — auth 소스만 SSO로 교체)
+  const isAdmin = await isEmailAdmin(finalEmail);
+  const role = isAdmin ? "admin" : "viewer";
   const week = 60 * 60 * 24 * 7;
   cookies().set(ROLE_COOKIE, role, { path: "/", maxAge: week });
   cookies().set(EMAIL_COOKIE, finalEmail, { path: "/", maxAge: week });
@@ -93,10 +97,10 @@ export default function LoginPage() {
             <div className="bg-surface-container-low border border-outline-variant border-dashed rounded-lg p-md text-left">
               <p className="text-label-caps text-on-surface-variant mb-xs">데모 안내</p>
               <p className="text-label-sm text-on-surface-variant leading-relaxed">
-                이메일이 <span className="font-mono font-semibold text-primary">admin@</span>으로 시작하면
-                <span className="font-semibold"> 관리자</span> 화면, 그 외엔
+                <span className="font-semibold">관리자</span> 페이지의 <span className="font-mono">사용자 관리</span> 에 등록된
+                이메일로 로그인하면 <span className="font-semibold">관리자</span> 화면, 그 외엔
                 <span className="font-semibold"> 일반 사용자</span> 화면으로 들어갑니다.
-                비밀번호는 아무 값이나 가능합니다.
+                비밀번호는 아무 값이나 가능합니다. (SSO 연동 시 비밀번호 불필요)
               </p>
             </div>
           </div>
