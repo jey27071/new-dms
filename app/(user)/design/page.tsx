@@ -30,7 +30,7 @@ const TOOLS = [
 
 export default function DesignHubPage() {
   return (
-    <div className="max-w-[1040px] mx-auto space-y-xl">
+    <div className="max-w-[1280px] mx-auto space-y-xl">
       <div>
         <div className="flex items-center gap-sm text-secondary text-label-sm mb-xs">
           <Icon name="auto_awesome" className="text-[14px]" />

@@ -118,7 +118,7 @@ export default function AdminCategoriesPage() {
   const currentDomain = DOMAINS.find((d) => d.key === activeDomain);
 
   return (
-    <div className="max-w-[900px] mx-auto space-y-lg">
+    <div className="max-w-[1080px] mx-auto space-y-lg">
       <div>
         <h1 className="text-h1 font-semibold text-on-surface">카테고리 설정</h1>
         <p className="text-body-base text-on-surface-variant mt-xs">

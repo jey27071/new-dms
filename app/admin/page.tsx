@@ -79,7 +79,7 @@ export default function AdminDashboardPage() {
   }, [assets]);
 
   return (
-    <div className="max-w-[1040px] mx-auto space-y-lg">
+    <div className="max-w-[1280px] mx-auto space-y-lg">
       {/* 통계 4카드 */}
       <div className="grid grid-cols-4 gap-lg">
         <StatCard

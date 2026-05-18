@@ -134,7 +134,7 @@ export default function AssetLibraryPage() {
   const noCategoriesConfigured = mounted && tree.length === 0;
 
   return (
-    <div className="max-w-[1280px] mx-auto px-lg space-y-lg">
+    <div className="max-w-[1280px] mx-auto space-y-lg">
       {/* 헤더 */}
       <div className="flex items-end justify-between gap-md flex-wrap">
         <div>

@@ -76,7 +76,7 @@ export default function HomePage() {
   }, [assets]);
 
   return (
-    <div className="space-y-xl">
+    <div className="max-w-[1280px] mx-auto space-y-xl">
       {/* 디자인 탐색 */}
       <section>
         <h2 className="text-h1 font-semibold text-on-background mb-lg">디자인 탐색</h2>
