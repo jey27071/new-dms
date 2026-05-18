@@ -41,10 +41,10 @@ export function UserSidebar({ role, email }: { role: "admin" | "viewer"; email: 
     <aside className="fixed left-0 top-0 h-screen w-[240px] bg-surface-container-low flex flex-col py-lg gap-sm z-40 border-r border-outline-variant/40">
       <div className="px-lg mb-xl">
         <Link href="/" className="block">
-          <h1 className="text-[15px] font-bold text-on-surface tracking-tight leading-tight">
-            Design Management System
+          <h1 className="text-[28px] font-bold text-on-surface tracking-tight leading-none">
+            SDMS
           </h1>
-          <p className="text-label-sm text-secondary mt-xs">디자인 관리 시스템</p>
+          <p className="text-label-sm text-secondary mt-xs">Design Management System</p>
         </Link>
       </div>
 

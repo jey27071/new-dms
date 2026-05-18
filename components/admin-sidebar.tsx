@@ -32,14 +32,14 @@ export function AdminSidebar({ email }: { email: string }) {
       <div className="px-lg mb-lg">
         <Link href="/admin" className="block">
           <div className="flex items-center gap-sm">
-            <h1 className="text-[15px] font-bold text-on-surface tracking-tight leading-tight">
-              Design Management System
+            <h1 className="text-[28px] font-bold text-on-surface tracking-tight leading-none">
+              SDMS
             </h1>
             <span className="text-[10px] font-bold uppercase tracking-wider px-xs py-[2px] bg-error-container text-on-error-container rounded flex-shrink-0">
               ADMIN
             </span>
           </div>
-          <p className="text-label-sm text-secondary mt-xs">관리자 콘솔 · 디자인 관리 시스템</p>
+          <p className="text-label-sm text-secondary mt-xs">관리자 콘솔 · Design Management System</p>
         </Link>
       </div>
 

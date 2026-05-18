@@ -1,4 +1,4 @@
-# Design Management System · 디자인 관리 시스템 (Prototype)
+# SDMS · Design Management System (Prototype)
 
 기업 내부 브랜드 자산·가이드라인·디자인 요청 워크플로우 통합 포털 프로토타입.
 
