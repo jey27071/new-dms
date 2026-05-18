@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
@@ -14,6 +20,10 @@ import {
   uploadRequestAttachment,
   type RequestInput,
 } from "@/lib/store/requests";
+import {
+  getApproverFor,
+  type NotificationSetting,
+} from "@/lib/store/notification-settings";
 import { getClientEmail } from "@/lib/auth-client";
 
 const TYPES: RequestType[] = ["guide_inquiry", "asset_create", "production", "other"];
@@ -35,6 +45,8 @@ const STEPS = [
   { label: "최종 승인", desc: "에셋이 DMS 포털에 공개됩니다.", state: "pending" },
 ] as const;
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function SubmitRequestPage() {
   const router = useRouter();
   const [type, setType] = useState<RequestType>("guide_inquiry");
@@ -47,9 +59,61 @@ export default function SubmitRequestPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // 자동 승인자 미리보기
+  const [approver, setApprover] = useState<NotificationSetting | null>(null);
+  const [approverLoading, setApproverLoading] = useState(true);
+
+  // CC 이메일
+  const [ccEmails, setCcEmails] = useState<string[]>([]);
+  const [ccInput, setCcInput] = useState("");
+
   useEffect(() => {
     setRequesterEmail(getClientEmail());
   }, []);
+
+  // 요청 유형 바뀔 때마다 승인자 매핑 조회
+  useEffect(() => {
+    let cancelled = false;
+    setApproverLoading(true);
+    getApproverFor(type).then((result) => {
+      if (!cancelled) {
+        setApprover(result);
+        setApproverLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [type]);
+
+  function addCcEmail() {
+    const value = ccInput.trim().toLowerCase();
+    if (!value) return;
+    if (!EMAIL_REGEX.test(value)) {
+      setError(`올바른 이메일 형식이 아닙니다: ${value}`);
+      return;
+    }
+    if (ccEmails.includes(value)) {
+      setCcInput("");
+      return;
+    }
+    setError(null);
+    setCcEmails((prev) => [...prev, value]);
+    setCcInput("");
+  }
+
+  function handleCcKey(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addCcEmail();
+    } else if (e.key === "Backspace" && ccInput === "" && ccEmails.length > 0) {
+      setCcEmails((prev) => prev.slice(0, -1));
+    }
+  }
+
+  function removeCc(email: string) {
+    setCcEmails((prev) => prev.filter((e) => e !== email));
+  }
 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files;
@@ -90,6 +154,7 @@ export default function SubmitRequestPage() {
         attachments,
         requesterEmail,
         requesterName: requesterEmail.split("@")[0],
+        ccEmails,
       };
       const result = await createRequest(payload);
       if (!result) {
@@ -152,6 +217,34 @@ export default function SubmitRequestPage() {
                   </label>
                 ))}
               </div>
+              {/* 자동 승인자 미리보기 */}
+              {approverLoading ? (
+                <div className="bg-surface-container-low rounded-lg p-md flex items-center gap-sm">
+                  <Icon name="hourglass_empty" className="text-secondary text-[18px]" />
+                  <span className="text-body-sm text-secondary">승인자 확인 중...</span>
+                </div>
+              ) : approver ? (
+                <div className="bg-primary-fixed/40 border border-primary/20 rounded-lg p-md flex items-center gap-sm">
+                  <Icon name="person_pin" className="text-primary text-[20px]" />
+                  <span className="text-body-sm text-on-surface">
+                    이 요청은{" "}
+                    <strong className="text-primary">
+                      {approver.approverName ?? approver.approverEmail.split("@")[0]}
+                    </strong>
+                    에게 전달됩니다
+                    <span className="text-secondary ml-xs font-mono text-label-sm">
+                      ({approver.approverEmail})
+                    </span>
+                  </span>
+                </div>
+              ) : (
+                <div className="bg-surface-container-low rounded-lg p-md flex items-center gap-sm">
+                  <Icon name="info" className="text-secondary text-[18px]" />
+                  <span className="text-body-sm text-secondary">
+                    이 유형에 매핑된 승인자가 없습니다. 관리자가 검토 후 직접 배정합니다.
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-xs">
@@ -204,6 +297,45 @@ export default function SubmitRequestPage() {
                   className="w-full px-md py-sm border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none text-body-base"
                 />
               </div>
+            </div>
+
+            <div className="space-y-xs">
+              <label className="text-label-caps text-on-surface-variant">
+                참조 (CC) 이메일
+              </label>
+              <div className="border border-outline-variant rounded-lg p-sm flex flex-wrap gap-xs items-center min-h-[48px]">
+                {ccEmails.map((email) => (
+                  <span
+                    key={email}
+                    className="inline-flex items-center gap-xs bg-primary-fixed text-on-primary-fixed-variant px-sm py-xs rounded-full text-label-sm"
+                  >
+                    {email}
+                    <button
+                      type="button"
+                      onClick={() => removeCc(email)}
+                      className="hover:text-error transition-colors"
+                    >
+                      <Icon name="close" className="text-[14px]" />
+                    </button>
+                  </span>
+                ))}
+                <input
+                  type="email"
+                  value={ccInput}
+                  onChange={(e) => setCcInput(e.target.value)}
+                  onKeyDown={handleCcKey}
+                  onBlur={addCcEmail}
+                  placeholder={
+                    ccEmails.length === 0
+                      ? "이메일 입력 후 Enter / 쉼표 — 진행 알림을 함께 받습니다"
+                      : ""
+                  }
+                  className="flex-1 min-w-[200px] bg-transparent outline-none text-body-base px-xs font-mono text-body-sm"
+                />
+              </div>
+              <p className="text-label-sm text-secondary">
+                여기에 추가한 이메일은 요청 등록·상태 변경 시 모든 알림 메일에 CC로 함께 발송됩니다.
+              </p>
             </div>
 
             <div className="space-y-xs">

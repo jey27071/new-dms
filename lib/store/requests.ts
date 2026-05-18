@@ -8,6 +8,7 @@ import {
   type RequestStatus,
   type RequestType,
 } from "@/lib/data";
+import { getApproverFor } from "@/lib/store/notification-settings";
 
 const STORAGE_BUCKET = "assets";
 
@@ -145,6 +146,18 @@ export async function getRequest(id: string): Promise<DesignRequest | undefined>
 export async function createRequest(input: RequestInput): Promise<DesignRequest | null> {
   const supabase = createClient();
   const id = genRequestId();
+
+  // 승인자 자동 조회: input에 없으면 notification_settings에서 매핑된 승인자 사용
+  let assigneeEmail = input.assigneeEmail ?? null;
+  let assigneeName = input.assigneeName ?? null;
+  if (!assigneeEmail) {
+    const setting = await getApproverFor(input.type);
+    if (setting) {
+      assigneeEmail = setting.approverEmail;
+      assigneeName = setting.approverName ?? null;
+    }
+  }
+
   const row = {
     id,
     title: input.title,
@@ -156,8 +169,8 @@ export async function createRequest(input: RequestInput): Promise<DesignRequest 
     attachments: input.attachments ?? [],
     requester_email: input.requesterEmail,
     requester_name: input.requesterName ?? null,
-    assignee_email: input.assigneeEmail ?? null,
-    assignee_name: input.assigneeName ?? null,
+    assignee_email: assigneeEmail,
+    assignee_name: assigneeName,
     cc_emails: input.ccEmails ?? [],
   };
   const { data, error } = await supabase.from("requests").insert(row).select().single();
@@ -176,7 +189,7 @@ export async function createRequest(input: RequestInput): Promise<DesignRequest 
       type: input.type,
     },
   });
-  // 이메일 알림 — 지정 승인자가 있으면 그쪽으로, 없으면 관리자에게. CC 포함
+  // 이메일 알림 — 자동 조회된 승인자 포함, CC도 함께
   notify({
     type: "request_created",
     requestId: id,
@@ -187,8 +200,8 @@ export async function createRequest(input: RequestInput): Promise<DesignRequest 
     deadline: input.deadline,
     requesterEmail: input.requesterEmail,
     requesterName: input.requesterName,
-    assigneeEmail: input.assigneeEmail,
-    assigneeName: input.assigneeName,
+    assigneeEmail: assigneeEmail ?? undefined,
+    assigneeName: assigneeName ?? undefined,
     ccEmails: input.ccEmails ?? [],
   });
   return fromRequestRow(data as RequestRow);
