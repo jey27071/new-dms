@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/icon";
-import { type Prompt, PROMPT_CATEGORIES } from "@/lib/data";
+import { type Prompt } from "@/lib/data";
 import { listPrompts } from "@/lib/store/prompts";
+import { listCategories } from "@/lib/store/categories";
 
 export default function PromptsLibraryPage() {
   const [items, setItems] = useState<Prompt[]>([]);
+  const [managedCategories, setManagedCategories] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -17,9 +19,10 @@ export default function PromptsLibraryPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const result = await listPrompts();
+      const [prompts, cats] = await Promise.all([listPrompts(), listCategories("prompt")]);
       if (!cancelled) {
-        setItems(result);
+        setItems(prompts);
+        setManagedCategories(cats.map((c) => c.label));
         setMounted(true);
       }
     })();
@@ -35,9 +38,17 @@ export default function PromptsLibraryPage() {
   }, [items]);
 
   const categories = useMemo(() => {
+    // 관리자가 등록한 카테고리 순서 우선, 그 외 실제 데이터에 있는 카테고리는 뒤에 붙임
     const inUse = new Set(items.map((p) => p.category));
-    return PROMPT_CATEGORIES.filter((c) => inUse.has(c));
-  }, [items]);
+    const result: string[] = [];
+    for (const c of managedCategories) {
+      if (inUse.has(c)) result.push(c);
+    }
+    for (const c of inUse) {
+      if (!result.includes(c)) result.push(c);
+    }
+    return result;
+  }, [items, managedCategories]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

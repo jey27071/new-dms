@@ -24,19 +24,10 @@ import {
   getApproverFor,
   type NotificationSetting,
 } from "@/lib/store/notification-settings";
+import { listCategories, type Category } from "@/lib/store/categories";
 import { getClientEmail } from "@/lib/auth-client";
 
 const TYPES: RequestType[] = ["guide_inquiry", "asset_create", "production", "other"];
-
-const CATEGORIES = [
-  "마케팅 자료",
-  "로고 사용",
-  "소셜 미디어",
-  "웹 및 디지털",
-  "인쇄물 에셋",
-  "내부 도구",
-  "이벤트 및 사이니지",
-];
 
 const STEPS = [
   { label: "제출 완료", desc: "DMS 대기열에 즉시 등록됩니다.", state: "done" },
@@ -52,7 +43,8 @@ export default function SubmitRequestPage() {
   const [type, setType] = useState<RequestType>("guide_inquiry");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
   const [deadline, setDeadline] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [requesterEmail, setRequesterEmail] = useState("");
@@ -69,6 +61,22 @@ export default function SubmitRequestPage() {
 
   useEffect(() => {
     setRequesterEmail(getClientEmail());
+  }, []);
+
+  // 요청 카테고리 목록 로드 (관리자 카테고리 설정에서 관리)
+  useEffect(() => {
+    let cancelled = false;
+    listCategories("request").then((list) => {
+      if (cancelled) return;
+      setCategories(list);
+      if (list.length > 0 && !category) {
+        setCategory(list[0]!.label);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 요청 유형 바뀔 때마다 승인자 매핑 조회
@@ -281,11 +289,18 @@ export default function SubmitRequestPage() {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-md py-sm border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none text-body-base"
+                  disabled={categories.length === 0}
+                  className="w-full px-md py-sm border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none text-body-base disabled:opacity-60"
                 >
-                  {CATEGORIES.map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
+                  {categories.length === 0 ? (
+                    <option>(로딩 중...)</option>
+                  ) : (
+                    categories.map((c) => (
+                      <option key={c.id} value={c.label}>
+                        {c.label}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
               <div className="space-y-xs">

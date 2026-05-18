@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
 import { type Prompt, PROMPT_CATEGORIES } from "@/lib/data";
 import { createPrompt, updatePrompt, type PromptInput } from "@/lib/store/prompts";
+import { listCategories, type Category } from "@/lib/store/categories";
 
 type Props = {
   mode: "create" | "edit";
@@ -16,7 +17,27 @@ type Props = {
 export function PromptForm({ mode, initial, createdBy }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState(initial?.title ?? "");
+  const [categories, setCategories] = useState<string[]>([...PROMPT_CATEGORIES]);
   const [category, setCategory] = useState(initial?.category ?? PROMPT_CATEGORIES[0]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listCategories("prompt").then((list: Category[]) => {
+      if (cancelled) return;
+      const labels = list.map((c) => c.label);
+      if (labels.length > 0) {
+        setCategories(labels);
+        // 기존 category가 목록에 없으면(=관리자가 삭제했으면) 그대로 두되, 첫 항목 추천
+        if (!labels.includes(category) && !initial) {
+          setCategory(labels[0]!);
+        }
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [prompt, setPrompt] = useState(initial?.prompt ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [example, setExample] = useState(initial?.example ?? "");
@@ -119,7 +140,7 @@ export function PromptForm({ mode, initial, createdBy }: Props) {
         <div className="space-y-xs">
           <label className="text-label-caps text-on-surface-variant">카테고리</label>
           <div className="flex flex-wrap gap-sm">
-            {PROMPT_CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <button
                 key={c}
                 type="button"
