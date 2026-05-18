@@ -6,8 +6,12 @@ export type NavItem = {
 };
 
 export type NavSection = {
-  header?: { label: string; icon: string };
+  header?: { label: string; icon: string; href?: string };
   items: NavItem[];
+  /** true면 사용자가 chevron으로 펼침/닫힘 토글 가능 */
+  collapsible?: boolean;
+  /** pathname 기반으로 강제 펼침 (예: 현재 경로가 하위 메뉴 안에 있을 때) */
+  openWhen?: (pathname: string) => boolean;
 };
 
 // 일반 사용자 영역 — 섹션 단위로 그룹화
@@ -31,7 +35,9 @@ export const userNav: NavSection[] = [
     ],
   },
   {
-    header: { label: "디자인 제작", icon: "auto_awesome" },
+    header: { label: "디자인 제작", icon: "auto_awesome", href: "/design" },
+    collapsible: true,
+    openWhen: (p) => p.startsWith("/design"),
     items: [
       {
         label: "배너 제작",

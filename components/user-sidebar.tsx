@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/icon";
-import { userNav, type NavItem } from "@/lib/nav";
+import { userNav, type NavItem, type NavSection } from "@/lib/nav";
 
 function NavLink({
   item,
@@ -32,6 +33,113 @@ function NavLink({
   );
 }
 
+function CollapsibleSection({
+  section,
+  pathname,
+  isActive,
+}: {
+  section: NavSection;
+  pathname: string;
+  isActive: (item: NavItem) => boolean;
+}) {
+  const forceOpen = section.openWhen?.(pathname) ?? false;
+  const [manualOpen, setManualOpen] = useState(forceOpen);
+
+  // 경로가 하위 메뉴 영역으로 진입하면 자동으로 펼침
+  useEffect(() => {
+    if (forceOpen) setManualOpen(true);
+  }, [forceOpen]);
+
+  const isOpen = manualOpen;
+  const header = section.header;
+  if (!header) return null;
+
+  // 헤더는 좌측 영역(아이콘+라벨, /design으로 이동) + 우측 chevron(토글) 분리
+  const headerActive = forceOpen;
+  return (
+    <div>
+      <div
+        className={
+          "flex items-stretch h-10 " +
+          (headerActive ? "border-l-[3px] border-primary" : "")
+        }
+      >
+        {header.href ? (
+          <Link
+            href={header.href}
+            className={
+              "flex-1 flex items-center gap-md transition-colors " +
+              (headerActive
+                ? "text-primary font-semibold pl-[17px]"
+                : "text-secondary hover:bg-surface-container-highest pl-[20px]")
+            }
+          >
+            <Icon
+              name={header.icon}
+              className={headerActive ? "text-[22px]" : "text-[20px]"}
+            />
+            <span className="text-[14px]">{header.label}</span>
+          </Link>
+        ) : (
+          <div className="flex-1 flex items-center gap-md pl-[20px] text-secondary">
+            <Icon name={header.icon} className="text-[20px]" />
+            <span className="text-[14px]">{header.label}</span>
+          </div>
+        )}
+        {section.collapsible ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              setManualOpen(!isOpen);
+            }}
+            className="px-md text-secondary hover:text-primary transition-colors"
+            aria-label={isOpen ? "메뉴 접기" : "메뉴 펼치기"}
+          >
+            <Icon
+              name={isOpen ? "expand_less" : "expand_more"}
+              className="text-[20px]"
+            />
+          </button>
+        ) : null}
+      </div>
+      {isOpen ? (
+        <div className="flex flex-col gap-xs mt-xs">
+          {section.items.map((item) => (
+            <NavLink
+              key={item.href}
+              item={item}
+              active={isActive(item)}
+              indent={true}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PlainSection({
+  section,
+  isActive,
+}: {
+  section: NavSection;
+  isActive: (item: NavItem) => boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-xs">
+      {section.items.map((item) => (
+        <NavLink
+          key={item.href}
+          item={item}
+          active={isActive(item)}
+          indent={false}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function UserSidebar({ role, email }: { role: "admin" | "viewer"; email: string }) {
   const pathname = usePathname() || "/";
   const isActive = (item: NavItem) =>
@@ -48,30 +156,18 @@ export function UserSidebar({ role, email }: { role: "admin" | "viewer"; email: 
         </Link>
       </div>
 
-      <nav className="flex flex-col gap-xs">
+      <nav className="flex flex-col gap-sm">
         {userNav.map((section, idx) => (
-          <div key={idx} className={idx > 0 ? "mt-md" : ""}>
+          <div key={idx}>
             {section.header ? (
-              <div className="px-lg pt-xs pb-sm flex items-center gap-sm">
-                <Icon
-                  name={section.header.icon}
-                  className="text-on-surface-variant text-[16px]"
-                />
-                <span className="text-label-caps text-on-surface-variant uppercase tracking-wider">
-                  {section.header.label}
-                </span>
-              </div>
-            ) : null}
-            <div className="flex flex-col gap-xs">
-              {section.items.map((item) => (
-                <NavLink
-                  key={item.href}
-                  item={item}
-                  active={isActive(item)}
-                  indent={!!section.header}
-                />
-              ))}
-            </div>
+              <CollapsibleSection
+                section={section}
+                pathname={pathname}
+                isActive={isActive}
+              />
+            ) : (
+              <PlainSection section={section} isActive={isActive} />
+            )}
           </div>
         ))}
       </nav>
