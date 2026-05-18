@@ -128,7 +128,14 @@ export type Asset = {
   /** DB categories(domain='asset')의 라벨, 또는 초기 시드의 영문 키 */
   category: string;
   formats: AssetFormat[];
+  /** 라이브러리 카드용 미리보기 이미지 */
   image: string;
+  /**
+   * 포맷별 실제 다운로드 파일 URL.
+   * 예: { "PNG": "...", "AI": "..." }
+   * 비어 있거나 특정 포맷이 없으면 download 시 image 로 폴백.
+   */
+  files?: Record<string, string>;
   downloads: string;
   uploader: string;
   uploadedAt: string;

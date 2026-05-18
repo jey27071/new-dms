@@ -10,6 +10,8 @@ export type AssetInput = {
   category: string;
   formats: AssetFormat[];
   image: string;
+  /** 포맷별 다운로드 파일 URL 매핑 */
+  files?: Record<string, string>;
   description?: string;
   uploader: string;
   internal?: boolean;
@@ -25,6 +27,7 @@ type AssetRow = {
   category: string;
   formats: string[];
   image: string;
+  files: Record<string, string> | null;
   downloads: string;
   uploader: string;
   uploaded_at: string;
@@ -42,6 +45,7 @@ function fromRow(row: AssetRow): Asset {
     category: row.category,
     formats: row.formats as AssetFormat[],
     image: row.image,
+    files: row.files ?? undefined,
     downloads: row.downloads,
     uploader: row.uploader,
     uploadedAt: row.uploaded_at,
@@ -95,6 +99,7 @@ export async function createAsset(input: AssetInput): Promise<Asset | null> {
     category: input.category,
     formats: input.formats,
     image: input.image,
+    files: input.files ?? {},
     uploader: input.uploader,
     downloads: "0",
     uploaded_at: new Date().toISOString().slice(0, 10),
@@ -125,6 +130,7 @@ export async function updateAsset(
   if (patch.category !== undefined) update.category = patch.category;
   if (patch.formats !== undefined) update.formats = patch.formats;
   if (patch.image !== undefined) update.image = patch.image;
+  if (patch.files !== undefined) update.files = patch.files ?? {};
   if (patch.uploader !== undefined) update.uploader = patch.uploader;
   if (patch.internal !== undefined) update.is_internal = patch.internal;
   if (patch.primary !== undefined) update.is_primary = patch.primary;
@@ -163,9 +169,17 @@ const STORAGE_BUCKET = "assets";
 
 /** 파일을 assets 버킷에 업로드하고 퍼블릭 URL을 반환 */
 export async function uploadAssetImage(file: File): Promise<string | null> {
+  return uploadAssetFile(file);
+}
+
+/**
+ * 임의의 파일(이미지 외 AI/PDF/ZIP 등 포함)을 assets 버킷에 업로드.
+ * 확장자는 파일명에서 추출, 영숫자만 허용. 그 외엔 'bin' 으로 저장.
+ */
+export async function uploadAssetFile(file: File): Promise<string | null> {
   const supabase = createClient();
-  const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase();
-  const safeExt = /^[a-z0-9]+$/.test(ext) ? ext : "jpg";
+  const ext = (file.name.split(".").pop() ?? "bin").toLowerCase();
+  const safeExt = /^[a-z0-9]+$/.test(ext) ? ext : "bin";
   const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
   const { error } = await supabase.storage
     .from(STORAGE_BUCKET)
@@ -175,7 +189,7 @@ export async function uploadAssetImage(file: File): Promise<string | null> {
       contentType: file.type || undefined,
     });
   if (error) {
-    console.error("[uploadAssetImage]", error);
+    console.error("[uploadAssetFile]", error);
     return null;
   }
   const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);

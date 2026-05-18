@@ -125,6 +125,8 @@ export default function AssetDetailPage() {
               <ul className="space-y-sm">
                 {asset.formats.map((f) => {
                   const fileName = makeDownloadFileName(asset.title, f);
+                  const downloadUrl = asset.files?.[f] ?? asset.image;
+                  const isFallback = !asset.files?.[f];
                   return (
                     <li
                       key={f}
@@ -136,11 +138,18 @@ export default function AssetDetailPage() {
                         </div>
                         <div className="min-w-0">
                           <p className="text-body-base font-semibold truncate">{fileName}</p>
-                          <p className="text-body-sm text-secondary">{f} 파일</p>
+                          <p className="text-body-sm text-secondary">
+                            {f} 파일
+                            {isFallback ? (
+                              <span className="ml-xs text-label-sm text-amber-600">
+                                (미리보기 이미지)
+                              </span>
+                            ) : null}
+                          </p>
                         </div>
                       </div>
                       <a
-                        href={asset.image}
+                        href={downloadUrl}
                         download={fileName}
                         target="_blank"
                         rel="noreferrer"

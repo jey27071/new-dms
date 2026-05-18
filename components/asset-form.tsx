@@ -14,6 +14,7 @@ import {
   createAsset,
   updateAsset,
   uploadAssetImage,
+  uploadAssetFile,
   type AssetInput,
 } from "@/lib/store/assets";
 import {
@@ -25,8 +26,22 @@ import {
 
 const ALL_FORMATS: AssetFormat[] = ["AI", "PNG", "PDF", "SVG", "EPS", "ZIP", "MP4", "FIG", "ASE"];
 
-const MAX_FILE_SIZE_MB = 5;
-const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp", "image/svg+xml"];
+const MAX_PREVIEW_MB = 5;
+const MAX_FORMAT_FILE_MB = 20;
+const ACCEPTED_PREVIEW_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+];
+
+function humanSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 type Props = {
   mode: "create" | "edit";
@@ -97,6 +112,13 @@ export function AssetForm({ mode, initial, uploader }: Props) {
   const [previewUrl, setPreviewUrl] = useState<string>(existingUrl);
   const [isDragging, setIsDragging] = useState(false);
 
+  // 포맷별 파일 (새로 업로드) — File 객체
+  const [formatFiles, setFormatFiles] = useState<Record<string, File | null>>({});
+  // 포맷별 기존 URL (편집 모드에서 이미 등록된 파일)
+  const [existingFormatUrls, setExistingFormatUrls] = useState<Record<string, string>>(
+    initial?.files ?? {},
+  );
+
   // objectURL 정리
   useEffect(() => {
     return () => {
@@ -112,17 +134,43 @@ export function AssetForm({ mode, initial, uploader }: Props) {
 
   function applyFile(f: File) {
     setError(null);
-    if (!ACCEPTED_TYPES.includes(f.type) && !f.name.match(/\.(png|jpe?g|gif|webp|svg)$/i)) {
+    if (
+      !ACCEPTED_PREVIEW_TYPES.includes(f.type) &&
+      !f.name.match(/\.(png|jpe?g|gif|webp|svg)$/i)
+    ) {
       setError("지원하지 않는 파일 형식입니다. PNG · JPG · GIF · WEBP · SVG 만 가능합니다.");
       return;
     }
-    if (f.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      setError(`파일이 ${MAX_FILE_SIZE_MB}MB 보다 큽니다. 더 작은 이미지를 사용해주세요.`);
+    if (f.size > MAX_PREVIEW_MB * 1024 * 1024) {
+      setError(`미리보기 이미지가 ${MAX_PREVIEW_MB}MB 보다 큽니다.`);
       return;
     }
     if (previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
     setFile(f);
     setPreviewUrl(URL.createObjectURL(f));
+  }
+
+  /** 포맷별 파일 선택 핸들러 */
+  function applyFormatFile(format: AssetFormat, f: File) {
+    setError(null);
+    if (f.size > MAX_FORMAT_FILE_MB * 1024 * 1024) {
+      setError(`${format} 파일이 ${MAX_FORMAT_FILE_MB}MB 보다 큽니다.`);
+      return;
+    }
+    setFormatFiles((prev) => ({ ...prev, [format]: f }));
+  }
+
+  function clearFormatFile(format: AssetFormat) {
+    setFormatFiles((prev) => {
+      const next = { ...prev };
+      delete next[format];
+      return next;
+    });
+    setExistingFormatUrls((prev) => {
+      const next = { ...prev };
+      delete next[format];
+      return next;
+    });
   }
 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -161,24 +209,43 @@ export function AssetForm({ mode, initial, uploader }: Props) {
 
     setSubmitting(true);
     try {
-      // 1) 새 파일이 있으면 먼저 업로드
+      // 1) 미리보기 이미지 업로드 (필요 시)
       let finalUrl = existingUrl;
       if (file) {
         const uploaded = await uploadAssetImage(file);
         if (!uploaded) {
-          setError("이미지 업로드에 실패했습니다. 파일을 다시 선택해주세요.");
+          setError("미리보기 이미지 업로드에 실패했습니다. 파일을 다시 선택해주세요.");
           setSubmitting(false);
           return;
         }
         finalUrl = uploaded;
       }
 
-      // 2) DB 저장
+      // 2) 포맷별 파일 업로드 (새로 선택된 것만)
+      const finalFiles: Record<string, string> = {};
+      // 선택된 포맷만 결과에 포함 (체크 해제된 포맷은 자동 제외)
+      for (const fmt of formats) {
+        const newFile = formatFiles[fmt];
+        if (newFile) {
+          const url = await uploadAssetFile(newFile);
+          if (!url) {
+            setError(`${fmt} 파일 업로드에 실패했습니다.`);
+            setSubmitting(false);
+            return;
+          }
+          finalFiles[fmt] = url;
+        } else if (existingFormatUrls[fmt]) {
+          finalFiles[fmt] = existingFormatUrls[fmt]!;
+        }
+      }
+
+      // 3) DB 저장
       const payload: AssetInput = {
         title: title.trim(),
         category,
         formats,
         image: finalUrl,
+        files: finalFiles,
         description: description.trim() || undefined,
         uploader,
         internal,
@@ -222,11 +289,14 @@ export function AssetForm({ mode, initial, uploader }: Props) {
 
       {/* 폼 */}
       <div className="bg-white rounded-xl card-shadow p-xl border border-outline-variant/30 space-y-lg">
-        {/* 이미지 업로드 */}
+        {/* 미리보기 이미지 업로드 (라이브러리 카드 썸네일용) */}
         <div className="space-y-xs">
           <label className="text-label-caps text-on-surface-variant">
-            이미지 <span className="text-error">*</span>
+            미리보기 이미지 <span className="text-error">*</span>
           </label>
+          <p className="text-label-sm text-secondary">
+            라이브러리 카드 썸네일로 사용됩니다. 실제 다운로드 파일은 아래 "포맷별 파일" 에서 등록하세요.
+          </p>
           <label
             htmlFor="asset-file"
             onDragOver={(e) => {
@@ -267,7 +337,7 @@ export function AssetForm({ mode, initial, uploader }: Props) {
                     파일을 끌어다 놓거나 클릭해서 선택
                   </p>
                   <p className="text-label-sm text-secondary mt-xs">
-                    PNG · JPG · GIF · WEBP · SVG (최대 {MAX_FILE_SIZE_MB}MB)
+                    PNG · JPG · GIF · WEBP · SVG (최대 {MAX_PREVIEW_MB}MB)
                   </p>
                 </div>
               </div>
@@ -416,6 +486,107 @@ export function AssetForm({ mode, initial, uploader }: Props) {
             ))}
           </div>
         </div>
+
+        {/* 포맷별 파일 업로드 슬롯 */}
+        {formats.length > 0 ? (
+          <div className="space-y-xs">
+            <label className="text-label-caps text-on-surface-variant">
+              포맷별 파일 (실제 다운로드용)
+            </label>
+            <p className="text-label-sm text-secondary">
+              선택한 포맷마다 실제 다운로드될 파일을 등록하세요. 등록하지 않은 포맷은 미리보기 이미지가 다운로드됩니다.
+              포맷 1개당 최대 {MAX_FORMAT_FILE_MB}MB.
+            </p>
+            <ul className="space-y-sm">
+              {formats.map((fmt) => {
+                const newFile = formatFiles[fmt];
+                const existingUrl = existingFormatUrls[fmt];
+                return (
+                  <li
+                    key={fmt}
+                    className="flex items-center gap-md p-md bg-surface-container-low rounded-lg border border-outline-variant/40"
+                  >
+                    <span className="font-mono text-label-sm font-semibold text-primary w-14 text-center bg-primary-fixed rounded py-xs">
+                      {fmt}
+                    </span>
+                    {newFile ? (
+                      <>
+                        <Icon name="task" className="text-primary text-[20px]" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-body-sm font-semibold truncate">{newFile.name}</p>
+                          <p className="text-label-sm text-secondary">
+                            {humanSize(newFile.size)} · 새로 선택됨
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => clearFormatFile(fmt)}
+                          className="text-label-sm text-error hover:underline flex items-center gap-xs"
+                        >
+                          <Icon name="close" className="text-[14px]" />
+                          제거
+                        </button>
+                      </>
+                    ) : existingUrl ? (
+                      <>
+                        <Icon name="check_circle" className="text-emerald-600 text-[20px]" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-body-sm font-semibold text-on-surface-variant">
+                            현재 등록됨
+                          </p>
+                          <p className="text-label-sm text-secondary truncate">
+                            {decodeURIComponent(existingUrl.split("/").pop() ?? "")}
+                          </p>
+                        </div>
+                        <label className="text-label-sm text-primary hover:underline cursor-pointer flex items-center gap-xs">
+                          <Icon name="swap_horiz" className="text-[14px]" />
+                          교체
+                          <input
+                            type="file"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) applyFormatFile(fmt, f);
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => clearFormatFile(fmt)}
+                          className="text-label-sm text-error hover:underline flex items-center gap-xs"
+                        >
+                          <Icon name="close" className="text-[14px]" />
+                          제거
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="upload_file" className="text-secondary text-[20px]" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-body-sm text-secondary">
+                            등록된 파일 없음 (미리보기 이미지로 다운로드됨)
+                          </p>
+                        </div>
+                        <label className="text-label-sm text-primary hover:underline cursor-pointer flex items-center gap-xs">
+                          <Icon name="attach_file" className="text-[14px]" />
+                          파일 선택
+                          <input
+                            type="file"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) applyFormatFile(fmt, f);
+                            }}
+                          />
+                        </label>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ) : null}
 
         {/* 설명 */}
         <div className="space-y-xs">
