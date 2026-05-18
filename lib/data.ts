@@ -80,16 +80,15 @@ export const statusMeta: Record<
 
 // ===== 에셋 =====
 
-export type AssetCategory =
-  | "logo"
-  | "icon"
-  | "photo"
-  | "template"
-  | "social"
-  | "typography"
-  | "style";
+/**
+ * 에셋 카테고리는 DB(`categories` 테이블, domain='asset')에서 관리합니다.
+ * 저장값은 라벨 문자열(예: "로고", "아이콘")이며,
+ * 초기 시드 데이터의 영문 키("logo", "icon" 등)와의 호환을 위해
+ * `getAssetCategoryLabel()` 헬퍼를 사용해 표시 라벨을 결정하세요.
+ */
 
-export const assetCategoryLabel: Record<AssetCategory, string> = {
+/** 초기 시드 데이터의 영문 키와 한글 라벨 매핑 (호환용) */
+export const LEGACY_ASSET_CATEGORY_LABEL: Record<string, string> = {
   logo: "로고",
   icon: "아이콘",
   photo: "사진",
@@ -99,13 +98,35 @@ export const assetCategoryLabel: Record<AssetCategory, string> = {
   style: "스타일 가이드",
 };
 
+/** DB에 카테고리가 비어있을 때 사용할 기본 카테고리 목록 (라벨) */
+export const DEFAULT_ASSET_CATEGORIES = [
+  "로고",
+  "아이콘",
+  "사진",
+  "템플릿",
+  "소셜 미디어",
+  "타이포그래피",
+  "스타일 가이드",
+] as const;
+
+/**
+ * 저장된 카테고리 값을 표시용 라벨로 변환.
+ * - 신규 라벨 문자열(예: "로고")은 그대로 반환
+ * - 초기 시드의 영문 키(예: "logo")는 한글 라벨로 변환
+ * - 알 수 없는 값은 입력 그대로 반환 (사용자 정의 카테고리 보존)
+ */
+export function getAssetCategoryLabel(category: string): string {
+  return LEGACY_ASSET_CATEGORY_LABEL[category] ?? category;
+}
+
 export type AssetFormat = "AI" | "PNG" | "PDF" | "SVG" | "EPS" | "ZIP" | "MP4" | "FIG" | "ASE";
 
 export type Asset = {
   id: string;
   title: string;
   description?: string;
-  category: AssetCategory;
+  /** DB categories(domain='asset')의 라벨, 또는 초기 시드의 영문 키 */
+  category: string;
   formats: AssetFormat[];
   image: string;
   downloads: string;

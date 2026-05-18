@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
-import { assetCategoryLabel, type Asset } from "@/lib/data";
+import { getAssetCategoryLabel, type Asset } from "@/lib/data";
 import { listAssets, isUserAsset, deleteAsset } from "@/lib/store/assets";
 
 export default function AdminAssetsPage() {
@@ -111,7 +111,7 @@ export default function AdminAssetsPage() {
                           {a.title}
                         </Link>
                       </td>
-                      <td className="px-lg py-md text-secondary">{assetCategoryLabel[a.category]}</td>
+                      <td className="px-lg py-md text-secondary">{getAssetCategoryLabel(a.category)}</td>
                       <td className="px-lg py-md">
                         <div className="flex flex-wrap gap-xs">
                           {a.formats.map((f) => (

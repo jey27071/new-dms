@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
-import { assetCategoryLabel, type Asset } from "@/lib/data";
+import { getAssetCategoryLabel, type Asset } from "@/lib/data";
 import { listAssets, getAsset } from "@/lib/store/assets";
 
 export default function AssetDetailPage() {
@@ -149,7 +149,7 @@ export default function AssetDetailPage() {
 
             <div className="flex flex-wrap gap-xs mb-lg">
               <span className="bg-surface-container-high text-on-surface-variant px-sm py-xs rounded-full text-label-sm">
-                #{assetCategoryLabel[asset.category]}
+                #{getAssetCategoryLabel(asset.category)}
               </span>
               {asset.formats.map((f) => (
                 <span

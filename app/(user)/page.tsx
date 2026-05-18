@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
 import { listAssets } from "@/lib/store/assets";
-import { type Asset, assetCategoryLabel } from "@/lib/data";
+import { type Asset, getAssetCategoryLabel } from "@/lib/data";
 
 const categories = [
   { label: "로고", icon: "category", filter: "logo" },
@@ -142,7 +142,7 @@ export default function HomePage() {
                   />
                 </div>
                 <span className="text-label-caps text-primary mb-xs block">
-                  {assetCategoryLabel[asset.category]}
+                  {getAssetCategoryLabel(asset.category)}
                 </span>
                 <h4 className="text-h3 font-semibold text-on-surface truncate">{asset.title}</h4>
                 <p className="text-body-sm text-secondary mt-xs">{relativeTime(asset.uploadedAt)}</p>
@@ -200,7 +200,7 @@ export default function HomePage() {
                       {asset.title}
                     </h4>
                     <p className="text-label-sm text-secondary truncate">
-                      {assetCategoryLabel[asset.category]} · {asset.downloads} 다운로드
+                      {getAssetCategoryLabel(asset.category)} · {asset.downloads} 다운로드
                     </p>
                   </div>
                 </div>

@@ -2,11 +2,12 @@
 // 실 DB(PostgreSQL via Supabase)에 직접 쓰고 읽습니다.
 
 import { createClient } from "@/lib/supabase/client";
-import { type Asset, type AssetCategory, type AssetFormat } from "@/lib/data";
+import { type Asset, type AssetFormat } from "@/lib/data";
 
 export type AssetInput = {
   title: string;
-  category: AssetCategory;
+  /** 카테고리 라벨 (DB categories 테이블, domain='asset') */
+  category: string;
   formats: AssetFormat[];
   image: string;
   description?: string;
@@ -38,7 +39,7 @@ function fromRow(row: AssetRow): Asset {
     id: row.id,
     title: row.title,
     description: row.description ?? undefined,
-    category: row.category as AssetCategory,
+    category: row.category,
     formats: row.formats as AssetFormat[],
     image: row.image,
     downloads: row.downloads,

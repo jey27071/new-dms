@@ -3,33 +3,35 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
-import { assetCategoryLabel, type Asset, type AssetCategory, type AssetFormat } from "@/lib/data";
+import {
+  DEFAULT_ASSET_CATEGORIES,
+  getAssetCategoryLabel,
+  type Asset,
+  type AssetFormat,
+} from "@/lib/data";
 import { listAssets } from "@/lib/store/assets";
-
-const categories: AssetCategory[] = [
-  "logo",
-  "icon",
-  "photo",
-  "template",
-  "social",
-  "typography",
-  "style",
-];
+import { listCategories } from "@/lib/store/categories";
 
 const formats: AssetFormat[] = ["AI", "PNG", "PDF", "SVG"];
 
 export default function AssetLibraryPage() {
   const [items, setItems] = useState<Asset[]>([]);
+  const [categories, setCategories] = useState<string[]>([...DEFAULT_ASSET_CATEGORIES]);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const result = await listAssets();
-      if (!cancelled) {
-        setItems(result);
-        setMounted(true);
+      const [assetList, catList] = await Promise.all([
+        listAssets(),
+        listCategories("asset"),
+      ]);
+      if (cancelled) return;
+      setItems(assetList);
+      if (catList.length > 0) {
+        setCategories(catList.map((c) => c.label));
       }
+      setMounted(true);
     })();
     return () => {
       cancelled = true;
@@ -52,7 +54,7 @@ export default function AssetLibraryPage() {
                   defaultChecked={i === 0}
                   className="rounded border-outline-variant text-primary focus:ring-primary"
                 />
-                <span className="text-body-sm">{assetCategoryLabel[c]}</span>
+                <span className="text-body-sm">{c}</span>
               </label>
             ))}
           </div>
@@ -153,7 +155,7 @@ export default function AssetLibraryPage() {
                 <h4 className="text-h3 font-semibold text-on-surface mb-xs">{a.title}</h4>
                 <div className="flex gap-xs mb-md flex-wrap">
                   <span className="px-xs py-[2px] bg-surface-container text-label-sm text-on-surface-variant rounded">
-                    {assetCategoryLabel[a.category]}
+                    {getAssetCategoryLabel(a.category)}
                   </span>
                   {a.formats.map((f, idx) => (
                     <span

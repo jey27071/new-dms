@@ -4,23 +4,20 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
-import { assetCategoryLabel, type Asset, type AssetCategory, type AssetFormat } from "@/lib/data";
+import {
+  DEFAULT_ASSET_CATEGORIES,
+  getAssetCategoryLabel,
+  type Asset,
+  type AssetFormat,
+} from "@/lib/data";
 import {
   createAsset,
   updateAsset,
   uploadAssetImage,
   type AssetInput,
 } from "@/lib/store/assets";
+import { listCategories, type Category } from "@/lib/store/categories";
 
-const ALL_CATEGORIES: AssetCategory[] = [
-  "logo",
-  "icon",
-  "photo",
-  "template",
-  "social",
-  "typography",
-  "style",
-];
 const ALL_FORMATS: AssetFormat[] = ["AI", "PNG", "PDF", "SVG", "EPS", "ZIP", "MP4", "FIG", "ASE"];
 
 const MAX_FILE_SIZE_MB = 5;
@@ -35,13 +32,38 @@ type Props = {
 export function AssetForm({ mode, initial, uploader }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState(initial?.title ?? "");
-  const [category, setCategory] = useState<AssetCategory>(initial?.category ?? "logo");
+  // 기존 시드의 영문 키("logo" 등)는 라벨로 변환해 폼 내부에서 사용
+  const initialCategory = initial?.category
+    ? getAssetCategoryLabel(initial.category)
+    : DEFAULT_ASSET_CATEGORIES[0];
+  const [categories, setCategories] = useState<string[]>([...DEFAULT_ASSET_CATEGORIES]);
+  const [category, setCategory] = useState<string>(initialCategory);
   const [formats, setFormats] = useState<AssetFormat[]>(initial?.formats ?? ["PNG"]);
   const [description, setDescription] = useState(initial?.description ?? "");
   const [internal, setInternal] = useState(initial?.internal ?? false);
   const [primary, setPrimary] = useState(initial?.primary ?? false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // DB의 에셋 카테고리 목록 불러오기 (있으면 기본값 대체)
+  useEffect(() => {
+    let cancelled = false;
+    listCategories("asset").then((list: Category[]) => {
+      if (cancelled) return;
+      const labels = list.map((c) => c.label);
+      if (labels.length > 0) {
+        setCategories(labels);
+        // 기존 category가 목록에 없으면(=관리자가 삭제했으면) 첫 항목 추천 (create 모드만)
+        if (!labels.includes(category) && mode === "create") {
+          setCategory(labels[0]!);
+        }
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 이미지 상태
   // - existingUrl: 편집 모드일 때 기존 이미지 URL
@@ -275,7 +297,7 @@ export function AssetForm({ mode, initial, uploader }: Props) {
             카테고리 <span className="text-error">*</span>
           </label>
           <div className="flex flex-wrap gap-sm">
-            {ALL_CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <button
                 key={c}
                 type="button"
@@ -287,7 +309,7 @@ export function AssetForm({ mode, initial, uploader }: Props) {
                     : "bg-white text-on-surface border-outline-variant hover:bg-surface-container-low")
                 }
               >
-                {assetCategoryLabel[c]}
+                {c}
               </button>
             ))}
           </div>

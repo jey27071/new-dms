@@ -1,8 +1,8 @@
-// 카테고리 데이터 접근 계층 (요청·프롬프트 카테고리)
+// 카테고리 데이터 접근 계층 (요청·프롬프트·에셋 카테고리)
 
 import { createClient } from "@/lib/supabase/client";
 
-export type CategoryDomain = "request" | "prompt";
+export type CategoryDomain = "request" | "prompt" | "asset";
 
 export type Category = {
   id: string;
@@ -29,7 +29,7 @@ function fromRow(row: Row): Category {
 }
 
 function genId(domain: CategoryDomain): string {
-  const prefix = domain === "request" ? "rc" : "pc";
+  const prefix = domain === "request" ? "rc" : domain === "prompt" ? "pc" : "ac";
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 }
 

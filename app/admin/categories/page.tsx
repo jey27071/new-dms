@@ -23,6 +23,11 @@ const DOMAINS: { key: CategoryDomain; label: string; description: string }[] = [
     label: "프롬프트 카테고리",
     description: "AI 프롬프트 라이브러리에서 사용되는 카테고리 목록.",
   },
+  {
+    key: "asset",
+    label: "에셋 카테고리",
+    description: "에셋 라이브러리에서 분류·필터링에 사용되는 카테고리 목록.",
+  },
 ];
 
 export default function AdminCategoriesPage() {
