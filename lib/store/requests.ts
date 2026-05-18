@@ -11,6 +11,17 @@ import {
 
 const STORAGE_BUCKET = "assets";
 
+// fire-and-forget 알림 호출 (실패해도 요청 자체는 막지 않음)
+function notify(payload: Record<string, unknown>) {
+  if (typeof window === "undefined") return;
+  fetch("/api/notify", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload),
+    keepalive: true,
+  }).catch((err) => console.warn("[notify]", err));
+}
+
 export type RequestInput = {
   title: string;
   type: RequestType;
@@ -22,6 +33,7 @@ export type RequestInput = {
   requesterName?: string;
   assigneeEmail?: string;
   assigneeName?: string;
+  ccEmails?: string[];
 };
 
 type RequestRow = {
@@ -37,6 +49,7 @@ type RequestRow = {
   requester_name: string | null;
   assignee_email: string | null;
   assignee_name: string | null;
+  cc_emails: string[];
   submitted_at: string;
   closed_at: string | null;
   created_at: string;
@@ -67,6 +80,7 @@ function fromRequestRow(row: RequestRow): DesignRequest {
     requesterName: row.requester_name ?? undefined,
     assigneeEmail: row.assignee_email ?? undefined,
     assigneeName: row.assignee_name ?? undefined,
+    ccEmails: row.cc_emails ?? [],
     submittedAt: row.submitted_at,
     closedAt: row.closed_at ?? undefined,
     createdAt: row.created_at,
@@ -144,6 +158,7 @@ export async function createRequest(input: RequestInput): Promise<DesignRequest 
     requester_name: input.requesterName ?? null,
     assignee_email: input.assigneeEmail ?? null,
     assignee_name: input.assigneeName ?? null,
+    cc_emails: input.ccEmails ?? [],
   };
   const { data, error } = await supabase.from("requests").insert(row).select().single();
   if (error) {
@@ -160,6 +175,21 @@ export async function createRequest(input: RequestInput): Promise<DesignRequest 
       title: input.title,
       type: input.type,
     },
+  });
+  // 이메일 알림 — 지정 승인자가 있으면 그쪽으로, 없으면 관리자에게. CC 포함
+  notify({
+    type: "request_created",
+    requestId: id,
+    title: input.title,
+    description: input.description,
+    requestType: input.type,
+    category: input.category,
+    deadline: input.deadline,
+    requesterEmail: input.requesterEmail,
+    requesterName: input.requesterName,
+    assigneeEmail: input.assigneeEmail,
+    assigneeName: input.assigneeName,
+    ccEmails: input.ccEmails ?? [],
   });
   return fromRequestRow(data as RequestRow);
 }
@@ -203,6 +233,21 @@ export async function changeStatus(
     actorName: actor.name,
     data: { from: fromStatus, to: toStatus, note: note ?? null },
   });
+  // 요청자 + 승인자 + CC 모두에게 상태 변경 알림
+  notify({
+    type: "status_changed",
+    requestId,
+    title: current.title,
+    from: fromStatus,
+    to: toStatus,
+    note: note ?? null,
+    requesterEmail: current.requesterEmail,
+    requesterName: current.requesterName,
+    assigneeEmail: current.assigneeEmail,
+    assigneeName: current.assigneeName,
+    ccEmails: current.ccEmails,
+    actorEmail: actor.email,
+  });
   return fromRequestRow(data as RequestRow);
 }
 
@@ -233,7 +278,19 @@ export async function assignRequest(
     actorName: actor.name,
     data: { assigneeEmail: assignee.email, assigneeName: assignee.name ?? null },
   });
-  return fromRequestRow(data as RequestRow);
+  // 배정된 승인자 + CC에게 알림
+  const updated = fromRequestRow(data as RequestRow);
+  notify({
+    type: "request_assigned",
+    requestId,
+    title: updated.title,
+    assigneeEmail: assignee.email,
+    assigneeName: assignee.name,
+    requesterEmail: updated.requesterEmail,
+    requesterName: updated.requesterName,
+    ccEmails: updated.ccEmails,
+  });
+  return updated;
 }
 
 export async function addComment(

@@ -29,6 +29,7 @@ export type DesignRequest = {
   requesterName?: string;
   assigneeEmail?: string;
   assigneeName?: string;
+  ccEmails: string[];
   submittedAt: string;
   closedAt?: string;
   createdAt: string;

@@ -1,3 +1,5 @@
+// 서버 사이드 인증 헬퍼 (가짜 쿠키 기반 — 추후 SSO 붙을 자리)
+
 import { cookies } from "next/headers";
 import {
   ROLE_COOKIE,
