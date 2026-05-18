@@ -184,9 +184,16 @@ export async function getApproversFor(
     console.error("[getApproversFor]", error);
     return [];
   }
-  type Joined = { admins: { email: string; name: string | null } | null };
-  return ((data ?? []) as Joined[])
-    .map((r) => r.admins)
+  // Supabase 조인 결과는 admins가 배열로 추론될 수 있어 unknown 경유로 캐스팅
+  type Joined = {
+    admins:
+      | { email: string; name: string | null }
+      | { email: string; name: string | null }[]
+      | null;
+  };
+  const rows = (data ?? []) as unknown as Joined[];
+  return rows
+    .map((r) => (Array.isArray(r.admins) ? r.admins[0] : r.admins))
     .filter((a): a is { email: string; name: string | null } => !!a)
     .map((a) => ({ email: a.email, name: a.name ?? undefined }));
 }
