@@ -153,7 +153,7 @@ export default function AssetDetailPage() {
                         download={fileName}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex-shrink-0 flex items-center gap-xs bg-primary text-on-primary px-lg py-sm rounded-lg hover:brightness-95 transition-all text-label-sm font-semibold"
+                        className="flex-shrink-0 inline-flex items-center justify-center gap-xs bg-primary text-on-primary rounded-lg hover:brightness-95 transition-all text-label-sm font-semibold min-w-[110px] h-10 px-md"
                       >
                         <Icon name="download" className="text-[18px]" />
                         {f}
