@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Icon } from "@/components/icon";
 import {
   getAssetCategoryLabel,
@@ -16,13 +17,24 @@ import {
 
 const PAGE_SIZE = 24;
 
-export default function AssetLibraryPage() {
+export default function AssetLibraryPageWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <AssetLibraryPage />
+    </Suspense>
+  );
+}
+
+function AssetLibraryPage() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("q") ?? "";
+
   const [items, setItems] = useState<Asset[]>([]);
   const [tree, setTree] = useState<CategoryNode[]>([]);
   const [mounted, setMounted] = useState(false);
 
   // 필터·검색 상태
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialQuery);
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [selectedFormats, setSelectedFormats] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
