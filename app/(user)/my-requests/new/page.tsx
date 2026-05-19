@@ -49,12 +49,19 @@ function SubmitRequestPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryType = searchParams.get("type") as RequestType | null;
+  const topic = searchParams.get("topic"); // 예: "ai_quota"
   const initialType: RequestType = TYPES.includes(queryType as RequestType)
     ? (queryType as RequestType)
-    : "guide_inquiry";
+    : topic === "ai_quota"
+      ? "other"
+      : "guide_inquiry";
   const [type, setType] = useState<RequestType>(initialType);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState(topic === "ai_quota" ? "AI 생성 한도 추가 요청" : "");
+  const [description, setDescription] = useState(
+    topic === "ai_quota"
+      ? "AI 이미지 생성 일일 한도(5회)를 모두 사용했습니다. 추가 사용이 필요한 사유와 예상 횟수를 검토 부탁드립니다.\n\n- 사유:\n- 예상 추가 사용 횟수:\n- 기간:"
+      : "",
+  );
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [deadline, setDeadline] = useState("");

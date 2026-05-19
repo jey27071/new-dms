@@ -115,6 +115,12 @@ export const adminNav: NavSection[] = [
         match: (p) => p.startsWith("/admin/prompts"),
       },
       {
+        label: "AI 생성 스타일",
+        href: "/admin/ai-styles",
+        icon: "auto_fix_high",
+        match: (p) => p.startsWith("/admin/ai-styles"),
+      },
+      {
         label: "모든 요청",
         href: "/admin/requests",
         icon: "list_alt",
