@@ -31,15 +31,17 @@ export function AdminSidebar({ email }: { email: string }) {
     <aside className="fixed left-0 top-0 h-screen w-[240px] bg-surface-container-low flex flex-col py-lg gap-sm z-40 border-r border-outline-variant/40">
       <div className="px-lg mb-lg">
         <Link href="/admin" className="block">
-          <div className="flex items-center gap-sm">
-            <h1 className="text-[28px] font-bold text-on-surface tracking-tight leading-none">
-              SDMS
-            </h1>
-            <span className="text-[10px] font-bold uppercase tracking-wider px-xs py-[2px] bg-error-container text-on-error-container rounded flex-shrink-0">
+          <div className="flex items-start gap-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/sdms_signiture.png"
+              alt="SDMS · S-1 Design Management System"
+              className="w-full max-w-[170px] h-auto"
+            />
+            <span className="text-[10px] font-bold uppercase tracking-wider px-xs py-[2px] bg-error-container text-on-error-container rounded flex-shrink-0 mt-xs">
               ADMIN
             </span>
           </div>
-          <p className="text-label-sm text-secondary mt-xs">Design Management System</p>
         </Link>
       </div>
 
