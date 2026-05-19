@@ -17,9 +17,9 @@ export function Topbar({ area }: TopbarProps) {
     e.preventDefault();
     const q = query.trim();
     if (!q) return;
-    // 토픽바 검색은 어디서든 에셋 라이브러리로 보내 검색어 적용
-    const path = isAdmin ? "/admin/assets" : "/assets";
-    router.push(`${path}?q=${encodeURIComponent(q)}`);
+    // 사용자 영역에서는 통합 검색 페이지, 관리자 영역에서는 에셋 관리로
+    const path = isAdmin ? `/admin/assets?q=${encodeURIComponent(q)}` : `/search?q=${encodeURIComponent(q)}`;
+    router.push(path);
   }
 
   return (
@@ -34,7 +34,7 @@ export function Topbar({ area }: TopbarProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="w-full bg-surface-container-low border border-outline-variant rounded-xl py-sm pl-10 pr-md text-body-base focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary/40 transition-all"
-            placeholder={isAdmin ? "리소스 검색..." : "에셋 검색 (제목·설명·카테고리)"}
+            placeholder={isAdmin ? "리소스 검색..." : "통합 검색 (에셋·가이드·프롬프트·템플릿)"}
             type="search"
           />
         </div>
