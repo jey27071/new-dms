@@ -31,17 +31,16 @@ export function AdminSidebar({ email }: { email: string }) {
     <aside className="fixed left-0 top-0 h-screen w-[240px] bg-surface-container-low flex flex-col py-lg gap-sm z-40 border-r border-outline-variant/40">
       <div className="px-lg mb-lg">
         <Link href="/admin" className="block">
-          <div className="flex items-start gap-sm">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/sdms_signiture.png"
-              alt="SDMS · S-1 Design Management System"
-              className="w-full max-w-[135px] h-auto"
-            />
-            <span className="text-[10px] font-bold uppercase tracking-wider px-xs py-[2px] bg-error-container text-on-error-container rounded flex-shrink-0 mt-xs">
-              ADMIN
-            </span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/sdms_signiture.png"
+            alt="SDMS · S-1 Design Management System"
+            className="w-full max-w-[160px] h-auto"
+          />
+          <span className="inline-flex items-center gap-xs mt-sm px-sm py-[3px] bg-error-container text-on-error-container text-[10px] font-bold uppercase tracking-wider rounded">
+            <Icon name="verified_user" className="text-[12px]" />
+            ADMIN
+          </span>
         </Link>
       </div>
 
