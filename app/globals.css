@@ -2,6 +2,342 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =====================================================================
+ * SW Design System V2.4 토큰
+ * 구조: Foundation (Primitive) → Semantic → Component
+ * Light = :root / Dark = [data-theme="dark"]
+ * =====================================================================
+ */
+
+:root {
+  /* ───── Foundation · Gray (Light) ───── */
+  --color-gray-0: #FAFAFA;
+  --color-gray-50: #F5F5F5;
+  --color-gray-100: #E9E9E9;
+  --color-gray-200: #D9D9D9;
+  --color-gray-300: #C4C4C4;
+  --color-gray-400: #9D9D9D;
+  --color-gray-500: #757575;
+  --color-gray-600: #555555;
+  --color-gray-700: #434343;
+  --color-gray-800: #353535;
+  --color-gray-900: #202020;
+
+  /* ───── Foundation · Blue (Light) ───── */
+  --color-blue-50: #E2F1FF;
+  --color-blue-100: #C8E4FF;
+  --color-blue-150: #A4D4FF;
+  --color-blue-200: #8BC6FF;
+  --color-blue-250: #5BB2FF;
+  --color-blue-300: #2B9EFF;
+  --color-blue-350: #268CF8;
+  --color-blue-400: #1D6CEB;
+  --color-blue-450: #2158C8;
+  --color-blue-500: #2747B9;
+
+  /* ───── Foundation · Status (Light) ───── */
+  --color-red-300: #FF4554;
+  --color-red-400: #E50533;
+  --color-yellow-400: #DBA400;
+  --color-green-400: #1A7F3F;
+
+  /* ───── Base ───── */
+  --color-base-white: #FFFFFF;
+  --color-base-black: #000000;
+
+  /* ───── Semantic · color-bg (페이지/섹션 배경) ───── */
+  --color-bg-default: #FAFAFA;
+  --color-bg-subtle: #F5F5F5;
+  --color-bg-muted: #E9E9E9;
+  --color-bg-elevated: #E9E9E9;
+  --color-bg-home: #F5F6FB;
+  --color-bg-selected: #E2F1FF;
+
+  /* ───── Semantic · color-surface (컴포넌트 표면) ───── */
+  --color-surface-default: #FFFFFF;
+  --color-surface-raised: #FFFFFF;
+
+  /* ───── Semantic · color-text ───── */
+  --color-text-primary: #202020;
+  --color-text-secondary: #353535;
+  --color-text-tertiary: #555555;
+  --color-text-caption: #757575;
+  --color-text-placeholder: #9D9D9D;
+  --color-text-helper: #9D9D9D;
+  --color-text-link: #1D6CEB;
+  --color-text-correct: #1D6CEB;
+  --color-text-danger: #FF4554;
+  --color-text-disabled: #C4C4C4;
+  --color-text-inverse: #FFFFFF;
+
+  /* ───── Semantic · color-border ───── */
+  --color-border-subtle: #E9E9E9;
+  --color-border-default: #D9D9D9;
+  --color-border-strong: #C4C4C4;
+  --color-border-emphasis: #353535;
+  --color-border-focus: #1D6CEB;
+  --color-border-white: #FFFFFF;
+  --color-border-danger: #FF4554;
+  --color-border-correct: #1D6CEB;
+
+  /* ───── Semantic · color-icon ───── */
+  --color-icon-default: #757575;
+  --color-icon-muted: #C4C4C4;
+  --color-icon-emphasis: #353535;
+  --color-icon-accent: #1D6CEB;
+  --color-icon-inverse: #FFFFFF;
+  --color-icon-danger: #FF4554;
+
+  /* ───── Semantic · color-action ───── */
+  --color-action-primary-default: #1D6CEB;
+  --color-action-primary-hover: #2158C8;
+  --color-action-primary-pressed: #2747B9;
+  --color-action-primary-text: #FFFFFF;
+  --color-action-primary-subtle: #E2F1FF;
+
+  /* ───── Semantic · color-status ───── */
+  --color-status-success: #1D6CEB;
+  --color-status-error: #E50533;
+  --color-status-warning: #DBA400;
+  --color-status-info: #757575;
+
+  /* ───── Semantic · color-overlay ───── */
+  --color-overlay: rgba(0, 0, 0, 0.5);
+
+  /* ───── Spacing (Semantic) ───── */
+  --spacing-padding-block-xxs: 8px;
+  --spacing-padding-block-xs: 12px;
+  --spacing-padding-block-sm: 16px;
+  --spacing-padding-block-md: 20px;
+  --spacing-padding-block-lg: 24px;
+  --spacing-padding-inline-xxs: 8px;
+  --spacing-padding-inline-xs: 12px;
+  --spacing-padding-inline-sm: 16px;
+  --spacing-padding-inline-md: 20px;
+  --spacing-padding-inline-lg: 24px;
+  --spacing-section-xs: 16px;
+  --spacing-section-sm: 20px;
+  --spacing-section-md: 24px;
+  --spacing-section-lg: 32px;
+  --spacing-section-xl: 40px;
+  --spacing-section-xxl: 48px;
+  --spacing-stack-xs: 12px;
+  --spacing-stack-sm: 16px;
+  --spacing-stack-md: 20px;
+  --spacing-stack-lg: 24px;
+  --spacing-cluster-xxs: 8px;
+  --spacing-cluster-xs: 12px;
+  --spacing-cluster-sm: 16px;
+  --spacing-cluster-md: 20px;
+  --spacing-label-gap-inline-sm: 8px;
+  --spacing-label-gap-inline-md: 12px;
+  --spacing-label-gap-inline-lg: 16px;
+  --spacing-label-gap-block-sm: 4px;
+  --spacing-label-gap-block-md: 8px;
+
+  /* ───── Sizing ───── */
+  --sizing-form-control-height-xxs: 28px;
+  --sizing-form-control-height-xs: 34px;
+  --sizing-form-control-height-md: 44px;
+  --sizing-form-control-height-lg: 48px;
+  --sizing-button-height-xs: 34px;
+  --sizing-button-height-sm: 40px;
+  --sizing-button-height-md: 44px;
+  --sizing-button-height-lg: 48px;
+  --sizing-button-min-width: 80px;
+  --sizing-chip-height-sm: 28px;
+  --sizing-chip-height-md: 30px;
+  --sizing-chip-height-lg: 34px;
+  --sizing-table-row-height-xs: 34px;
+  --sizing-table-row-height-sm: 38px;
+  --sizing-table-row-height-md: 44px;
+
+  /* ───── Radius · Border-width ───── */
+  --radius-control-xs: 2px;
+  --radius-control-sm: 4px;
+  --radius-button-md: 4px;
+  --radius-card-md: 10px;
+  --radius-modal-md: 8px;
+  --border-width-default: 1px;
+  --border-width-strong: 2px;
+
+  /* ───── Component · Button (Primary) ───── */
+  --button-primary-default-bg: var(--color-action-primary-default);
+  --button-primary-hover-bg: var(--color-action-primary-hover);
+  --button-primary-pressed-bg: var(--color-action-primary-pressed);
+  --button-primary-disabled-bg: var(--color-border-default);
+  --button-primary-default-text: var(--color-action-primary-text);
+  --button-primary-disabled-text: var(--color-text-disabled);
+  --button-primary-default-icon: var(--color-action-primary-text);
+  --button-primary-focus-ring: var(--color-border-focus);
+
+  /* ───── Component · Button (Secondary) ───── */
+  --button-secondary-default-bg: var(--color-surface-default);
+  --button-secondary-hover-bg: var(--color-bg-subtle);
+  --button-secondary-pressed-bg: var(--color-bg-muted);
+  --button-secondary-disabled-bg: var(--color-bg-subtle);
+  --button-secondary-default-border: var(--color-border-default);
+  --button-secondary-hover-border: var(--color-border-strong);
+  --button-secondary-disabled-border: var(--color-border-subtle);
+  --button-secondary-default-text: var(--color-text-secondary);
+  --button-secondary-disabled-text: var(--color-text-disabled);
+
+  /* ───── Component · Button (Ghost) ───── */
+  --button-ghost-hover-bg: var(--color-bg-subtle);
+  --button-ghost-pressed-bg: var(--color-bg-muted);
+  --button-ghost-default-text: var(--color-text-secondary);
+  --button-ghost-disabled-text: var(--color-text-disabled);
+
+  /* ───── Component · Chip ───── */
+  --chip-default-bg: var(--color-bg-subtle);
+  --chip-hover-bg: var(--color-bg-muted);
+  --chip-selected-bg: var(--color-action-primary-subtle);
+  --chip-default-border: var(--color-border-default);
+  --chip-selected-border: var(--color-action-primary-default);
+  --chip-default-text: var(--color-text-secondary);
+  --chip-selected-text: var(--color-action-primary-default);
+
+  /* ───── Component · Input ───── */
+  --input-default-bg: var(--color-surface-default);
+  --input-disabled-bg: var(--color-bg-subtle);
+  --input-default-border: var(--color-border-default);
+  --input-hover-border: var(--color-border-strong);
+  --input-focus-border: var(--color-border-focus);
+  --input-error-border: var(--color-border-danger);
+  --input-correct-border: var(--color-border-correct);
+  --input-disabled-border: var(--color-border-default);
+  --input-placeholder-text: var(--color-text-placeholder);
+  --input-helper-text: var(--color-text-helper);
+  --input-error-text: var(--color-text-danger);
+  --input-correct-text: var(--color-text-correct);
+  --input-disabled-text: var(--color-text-disabled);
+
+  /* ───── Component · Navigation ───── */
+  --nav-bg: var(--color-surface-default);
+  --nav-item-hover-bg: var(--color-bg-subtle);
+  --nav-item-active-bg: var(--color-action-primary-subtle);
+  --nav-item-default-text: var(--color-text-tertiary);
+  --nav-item-active-text: var(--color-action-primary-default);
+  --nav-item-default-icon: var(--color-icon-default);
+  --nav-item-active-icon: var(--color-action-primary-default);
+  --nav-divider: var(--color-border-subtle);
+
+  /* ───── Component · Table ───── */
+  --table-header-bg: var(--color-bg-subtle);
+  --table-header-text: var(--color-text-tertiary);
+  --table-header-border: var(--color-border-default);
+  --table-row-default-bg: var(--color-surface-default);
+  --table-row-hover-bg: var(--color-bg-subtle);
+  --table-row-selected-bg: var(--color-bg-selected);
+  --table-cell-border: var(--color-border-subtle);
+  --table-cell-text: var(--color-text-secondary);
+
+  /* ───── Card shadow ───── */
+  --shadow-card: 0 1px 3px 0 rgba(30, 27, 75, 0.05),
+    0 4px 6px -2px rgba(30, 27, 75, 0.03);
+}
+
+/* =====================================================================
+ * Dark theme
+ * 규칙: 낮은 step = 더 어두운 색(배경), 높은 step = 더 밝은 색(텍스트)
+ * =====================================================================
+ */
+[data-theme="dark"] {
+  /* Foundation · Gray (Dark) */
+  --color-gray-0: #0D0E12;
+  --color-gray-50: #131418;
+  --color-gray-100: #1C1D23;
+  --color-gray-200: #24252C;
+  --color-gray-300: #2E2F38;
+  --color-gray-400: #35363F;
+  --color-gray-500: #3E4049;
+  --color-gray-600: #55575F;
+  --color-gray-700: #8A8C96;
+  --color-gray-800: #B8BABF;
+  --color-gray-900: #ECEDF0;
+
+  /* Foundation · Blue (Dark) */
+  --color-blue-50: #0C1D38;
+  --color-blue-100: #112B55;
+  --color-blue-150: #1A3D72;
+  --color-blue-200: #214EA0;
+  --color-blue-250: #2A65C8;
+  --color-blue-300: #3070D8;
+  --color-blue-350: #4285E8;
+  --color-blue-400: #6FA5F8;
+  --color-blue-450: #96BEF9;
+  --color-blue-500: #C0D8FC;
+
+  /* Status (Dark) */
+  --color-red-300: #F06070;
+  --color-red-400: #F06070;
+  --color-yellow-400: #E8C048;
+  --color-green-400: #3FBE7E;
+
+  /* Semantic · color-bg */
+  --color-bg-default: #131418;
+  --color-bg-subtle: #24252C;
+  --color-bg-muted: #2E2F38;
+  --color-bg-elevated: #35363F;
+  --color-bg-home: #131418;
+  --color-bg-selected: #112B55;
+
+  /* Semantic · color-surface */
+  --color-surface-default: #1C1D23;
+  --color-surface-raised: #35363F;
+
+  /* Semantic · color-text */
+  --color-text-primary: #ECEDF0;
+  --color-text-secondary: #B8BABF;
+  --color-text-tertiary: #8A8C96;
+  --color-text-caption: #8A8C96;
+  --color-text-placeholder: #55575F;
+  --color-text-helper: #55575F;
+  --color-text-link: #6FA5F8;
+  --color-text-correct: #6FA5F8;
+  --color-text-danger: #F06070;
+  --color-text-disabled: #35363F;
+  --color-text-inverse: #FFFFFF;
+
+  /* Semantic · color-border (rgba 흰색) */
+  --color-border-subtle: rgba(255, 255, 255, 0.04);
+  --color-border-default: rgba(255, 255, 255, 0.07);
+  --color-border-strong: rgba(255, 255, 255, 0.12);
+  --color-border-emphasis: rgba(255, 255, 255, 0.20);
+  --color-border-focus: #4285E8;
+  --color-border-white: #FFFFFF;
+  --color-border-danger: #F06070;
+  --color-border-correct: #4285E8;
+
+  /* Semantic · color-icon */
+  --color-icon-default: #8A8C96;
+  --color-icon-muted: #35363F;
+  --color-icon-emphasis: #B8BABF;
+  --color-icon-accent: #6FA5F8;
+  --color-icon-inverse: #FFFFFF;
+  --color-icon-danger: #F06070;
+
+  /* Semantic · color-action */
+  --color-action-primary-default: #3070D8;
+  --color-action-primary-hover: #2A65C8;
+  --color-action-primary-pressed: #214EA0;
+  --color-action-primary-text: #FFFFFF;
+  --color-action-primary-subtle: #112B55;
+
+  /* Semantic · color-status */
+  --color-status-success: #3FBE7E;
+  --color-status-error: #F06070;
+  --color-status-warning: #E8C048;
+  --color-status-info: #8A8C96;
+
+  /* Semantic · color-overlay */
+  --color-overlay: rgba(0, 0, 0, 0.75);
+
+  /* Card shadow — 다크에선 더 깊은 그림자 */
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.4),
+    0 4px 12px -2px rgba(0, 0, 0, 0.3);
+}
+
 @layer base {
   html,
   body {
@@ -18,8 +354,8 @@
       "Noto Sans KR",
       "Malgun Gothic",
       sans-serif;
-    background-color: #fcf8ff;
-    color: #1b1b24;
+    background-color: var(--color-bg-default);
+    color: var(--color-text-primary);
     -webkit-font-smoothing: antialiased;
   }
 
@@ -31,9 +367,7 @@
 
 @layer utilities {
   .card-shadow {
-    box-shadow:
-      0px 1px 3px 0px rgba(30, 27, 75, 0.05),
-      0px 4px 6px -2px rgba(30, 27, 75, 0.03);
+    box-shadow: var(--shadow-card);
   }
 
   .hide-scrollbar::-webkit-scrollbar {

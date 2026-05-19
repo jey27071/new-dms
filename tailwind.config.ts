@@ -1,75 +1,98 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * SW Design System V2.4 매핑.
+ * Tailwind 색상 이름은 기존을 유지하되, 값은 CSS 변수를 참조하여
+ * 라이트/다크 모드 토글로 자동 전환되도록 함.
+ *
+ * 기존 코드의 bg-primary, text-on-surface 등은 그대로 사용 가능.
+ * 점진적으로 Component Token (--button-primary-default-bg 등) 직접 활용 권장.
+ */
 const config: Config = {
+  darkMode: ['selector', '[data-theme="dark"]'],
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
-    "./lib/**/*.{ts,tsx}"
+    "./lib/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {
       colors: {
-        surface: "#fcf8ff",
-        "surface-dim": "#dcd8e5",
-        "surface-bright": "#fcf8ff",
-        "surface-container-lowest": "#ffffff",
-        "surface-container-low": "#f5f2ff",
-        "surface-container": "#f0ecf9",
-        "surface-container-high": "#eae6f4",
-        "surface-container-highest": "#e4e1ee",
-        "on-surface": "#1b1b24",
-        "on-surface-variant": "#464555",
-        "inverse-surface": "#302f39",
-        "inverse-on-surface": "#f3effc",
-        outline: "#777587",
-        "outline-variant": "#c7c4d8",
-        "surface-tint": "#4d44e3",
-        primary: "#3525cd",
-        "on-primary": "#ffffff",
-        "primary-container": "#4f46e5",
-        "on-primary-container": "#dad7ff",
-        "inverse-primary": "#c3c0ff",
-        secondary: "#5c5f61",
-        "on-secondary": "#ffffff",
-        "secondary-container": "#e0e3e5",
-        "on-secondary-container": "#626567",
-        tertiary: "#7e3000",
-        "on-tertiary": "#ffffff",
-        "tertiary-container": "#a44100",
-        "on-tertiary-container": "#ffd2be",
-        error: "#ba1a1a",
-        "on-error": "#ffffff",
-        "error-container": "#ffdad6",
-        "on-error-container": "#93000a",
-        "primary-fixed": "#e2dfff",
-        "primary-fixed-dim": "#c3c0ff",
-        "on-primary-fixed": "#0f0069",
-        "on-primary-fixed-variant": "#3323cc",
-        "secondary-fixed": "#e0e3e5",
-        "secondary-fixed-dim": "#c4c7c9",
-        "on-secondary-fixed": "#191c1e",
-        "on-secondary-fixed-variant": "#444749",
-        "tertiary-fixed": "#ffdbcc",
-        "tertiary-fixed-dim": "#ffb695",
-        "on-tertiary-fixed": "#351000",
-        "on-tertiary-fixed-variant": "#7b2f00",
-        background: "#fcf8ff",
-        "on-background": "#1b1b24",
-        "surface-variant": "#e4e1ee"
+        /* ── Action / Primary ── */
+        primary: "var(--color-action-primary-default)",
+        "on-primary": "var(--color-action-primary-text)",
+        "primary-container": "var(--color-action-primary-hover)",
+        "on-primary-container": "var(--color-action-primary-text)",
+        "primary-fixed": "var(--color-action-primary-subtle)",
+        "primary-fixed-dim": "var(--color-action-primary-subtle)",
+        "on-primary-fixed": "var(--color-text-primary)",
+        "on-primary-fixed-variant": "var(--color-action-primary-default)",
+        "inverse-primary": "var(--color-action-primary-subtle)",
+        "surface-tint": "var(--color-action-primary-default)",
+
+        /* ── Surface / bg ── */
+        surface: "var(--color-surface-default)",
+        "surface-dim": "var(--color-bg-muted)",
+        "surface-bright": "var(--color-surface-default)",
+        "surface-container-lowest": "var(--color-surface-default)",
+        "surface-container-low": "var(--color-bg-subtle)",
+        "surface-container": "var(--color-bg-subtle)",
+        "surface-container-high": "var(--color-bg-muted)",
+        "surface-container-highest": "var(--color-bg-muted)",
+        "surface-variant": "var(--color-bg-muted)",
+        background: "var(--color-bg-default)",
+        "on-background": "var(--color-text-primary)",
+        "inverse-surface": "var(--color-text-primary)",
+        "inverse-on-surface": "var(--color-surface-default)",
+
+        /* ── Text on surface ── */
+        "on-surface": "var(--color-text-primary)",
+        "on-surface-variant": "var(--color-text-secondary)",
+
+        /* ── Outline ── */
+        outline: "var(--color-icon-default)",
+        "outline-variant": "var(--color-border-default)",
+
+        /* ── Secondary / Tertiary (텍스트·아이콘 보조) ── */
+        secondary: "var(--color-text-tertiary)",
+        "on-secondary": "var(--color-text-inverse)",
+        "secondary-container": "var(--color-bg-subtle)",
+        "on-secondary-container": "var(--color-text-secondary)",
+        "secondary-fixed": "var(--color-bg-muted)",
+        "secondary-fixed-dim": "var(--color-bg-muted)",
+        "on-secondary-fixed": "var(--color-text-primary)",
+        "on-secondary-fixed-variant": "var(--color-text-secondary)",
+        tertiary: "var(--color-action-primary-default)",
+        "on-tertiary": "var(--color-action-primary-text)",
+        "tertiary-container": "var(--color-action-primary-subtle)",
+        "on-tertiary-container": "var(--color-action-primary-default)",
+        "tertiary-fixed": "var(--color-action-primary-subtle)",
+        "tertiary-fixed-dim": "var(--color-action-primary-subtle)",
+        "on-tertiary-fixed": "var(--color-action-primary-default)",
+        "on-tertiary-fixed-variant": "var(--color-action-primary-default)",
+
+        /* ── Status ── */
+        error: "var(--color-status-error)",
+        "on-error": "var(--color-text-inverse)",
+        "error-container": "var(--color-action-primary-subtle)" /* 옅은 강조 배경 — danger엔 별도 alpha overlay 권장 */,
+        "on-error-container": "var(--color-text-danger)",
       },
       borderRadius: {
-        DEFAULT: "0.125rem",
-        lg: "0.25rem",
-        xl: "0.5rem",
-        "2xl": "0.75rem",
-        full: "9999px"
+        DEFAULT: "var(--radius-control-xs)",  /* 2px */
+        sm: "var(--radius-control-xs)",       /* 2px */
+        lg: "var(--radius-control-sm)",       /* 4px = button-md */
+        xl: "var(--radius-modal-md)",         /* 8px = modal-md */
+        "2xl": "var(--radius-card-md)",       /* 10px = card-md */
+        full: "9999px",
       },
       spacing: {
-        xs: "0.25rem",
-        sm: "0.5rem",
-        md: "1rem",
-        lg: "1.5rem",
-        xl: "2rem"
+        xs: "4px",
+        sm: "8px",
+        md: "16px",
+        lg: "24px",
+        xl: "32px",
+        "2xl": "40px",
+        "3xl": "48px",
       },
       fontFamily: {
         sans: [
@@ -84,15 +107,8 @@ const config: Config = {
           "Apple SD Gothic Neo",
           "Noto Sans KR",
           "Malgun Gothic",
-          "sans-serif"
+          "sans-serif",
         ],
-        h1: ["Pretendard Variable", "Pretendard", "sans-serif"],
-        h2: ["Pretendard Variable", "Pretendard", "sans-serif"],
-        h3: ["Pretendard Variable", "Pretendard", "sans-serif"],
-        "body-base": ["Pretendard Variable", "Pretendard", "sans-serif"],
-        "body-sm": ["Pretendard Variable", "Pretendard", "sans-serif"],
-        "label-caps": ["Pretendard Variable", "Pretendard", "sans-serif"],
-        "label-sm": ["Pretendard Variable", "Pretendard", "sans-serif"]
       },
       fontSize: {
         h1: ["24px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "600" }],
@@ -101,14 +117,14 @@ const config: Config = {
         "body-base": ["14px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "400" }],
         "body-sm": ["13px", { lineHeight: "18px", letterSpacing: "0em", fontWeight: "400" }],
         "label-caps": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "700" }],
-        "label-sm": ["12px", { lineHeight: "16px", letterSpacing: "0em", fontWeight: "500" }]
+        "label-sm": ["12px", { lineHeight: "16px", letterSpacing: "0em", fontWeight: "500" }],
       },
       boxShadow: {
-        card: "0px 1px 3px 0px rgba(30, 27, 75, 0.05), 0px 4px 6px -2px rgba(30, 27, 75, 0.03)"
-      }
-    }
+        card: "var(--shadow-card)",
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 };
 
 export default config;
