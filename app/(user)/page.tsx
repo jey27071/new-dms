@@ -225,15 +225,15 @@ export default function HomePage() {
 
       {/* CTA 배너 */}
       <section>
-        <div className="relative w-full rounded-xl bg-primary-container p-xl overflow-hidden">
-          <div className="absolute right-0 top-0 w-1/3 h-full bg-on-primary-container/10 -skew-x-12 translate-x-1/2" />
-          <div className="absolute right-12 top-0 w-1/4 h-full bg-on-primary-container/5 -skew-x-12 translate-x-1/2" />
+        <div className="relative w-full rounded-xl bg-primary p-xl overflow-hidden">
+          <div className="absolute right-0 top-0 w-1/3 h-full bg-white/10 -skew-x-12 translate-x-1/2" />
+          <div className="absolute right-12 top-0 w-1/4 h-full bg-white/5 -skew-x-12 translate-x-1/2" />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-lg">
             <div className="max-w-xl">
-              <h2 className="text-h1 font-semibold text-on-primary-container mb-xs">
+              <h2 className="text-h1 font-semibold text-white mb-xs">
                 필요한 에셋을 찾을 수 없나요?
               </h2>
-              <p className="text-body-base text-on-primary-container/80">
+              <p className="text-body-base text-white/85">
                 디자인 팀에 공식 요청을 보내주세요. 커스텀 브랜드 에셋의 제작 과정을 처음부터 끝까지 추적해
                 드립니다.
               </p>
