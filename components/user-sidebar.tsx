@@ -235,7 +235,7 @@ export function UserSidebar({ role, email }: { role: "admin" | "viewer"; email: 
           <img
             src="/sdms_signiture.png"
             alt="SDMS · S-1 Design Management System"
-            className="w-full max-w-[200px] h-auto"
+            className="w-full max-w-[160px] h-auto"
           />
         </Link>
       </div>

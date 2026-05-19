@@ -36,7 +36,7 @@ export function AdminSidebar({ email }: { email: string }) {
             <img
               src="/sdms_signiture.png"
               alt="SDMS · S-1 Design Management System"
-              className="w-full max-w-[170px] h-auto"
+              className="w-full max-w-[135px] h-auto"
             />
             <span className="text-[10px] font-bold uppercase tracking-wider px-xs py-[2px] bg-error-container text-on-error-container rounded flex-shrink-0 mt-xs">
               ADMIN
