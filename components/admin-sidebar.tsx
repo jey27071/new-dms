@@ -37,10 +37,6 @@ export function AdminSidebar({ email }: { email: string }) {
             alt="SDMS · S-1 Design Management System"
             className="w-full max-w-[160px] h-auto"
           />
-          <span className="inline-flex items-center gap-xs mt-sm px-sm py-[3px] bg-error-container text-on-error-container text-[10px] font-bold uppercase tracking-wider rounded">
-            <Icon name="verified_user" className="text-[12px]" />
-            ADMIN
-          </span>
         </Link>
       </div>
 

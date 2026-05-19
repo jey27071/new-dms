@@ -23,7 +23,7 @@ export function Topbar({ area }: TopbarProps) {
   }
 
   return (
-    <header className="fixed top-0 right-0 w-[calc(100%-240px)] h-16 bg-surface border-b border-outline-variant flex items-center px-xl z-30">
+    <header className="fixed top-0 right-0 w-[calc(100%-240px)] h-16 bg-surface border-b border-outline-variant flex items-center justify-between gap-md px-xl z-30">
       <form onSubmit={handleSubmit} className="flex items-center gap-sm flex-1 max-w-xl">
         <div className="relative flex-1">
           <Icon
@@ -47,6 +47,13 @@ export function Topbar({ area }: TopbarProps) {
           검색
         </button>
       </form>
+
+      {isAdmin ? (
+        <span className="inline-flex items-center gap-xs px-sm py-xs bg-error-container text-on-error-container text-label-sm font-bold uppercase tracking-wider rounded-lg flex-shrink-0">
+          <Icon name="verified_user" className="text-[14px]" />
+          ADMIN
+        </span>
+      ) : null}
     </header>
   );
 }
