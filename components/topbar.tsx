@@ -23,9 +23,9 @@ export function Topbar({ area }: TopbarProps) {
   }
 
   return (
-    <header className="fixed top-0 right-0 w-[calc(100%-240px)] h-16 bg-surface border-b border-outline-variant flex justify-between items-center px-xl z-30">
-      <form onSubmit={handleSubmit} className="flex items-center gap-lg flex-1 max-w-xl">
-        <div className="relative w-full">
+    <header className="fixed top-0 right-0 w-[calc(100%-240px)] h-16 bg-surface border-b border-outline-variant flex items-center px-xl z-30">
+      <form onSubmit={handleSubmit} className="flex items-center gap-sm flex-1 max-w-xl">
+        <div className="relative flex-1">
           <Icon
             name="search"
             className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]"
@@ -38,16 +38,15 @@ export function Topbar({ area }: TopbarProps) {
             type="search"
           />
         </div>
-      </form>
-
-      <div className="flex items-center gap-md">
-        <button className="relative p-sm rounded-full hover:bg-surface-container-high transition-colors">
-          <Icon name="notifications" className="text-on-surface-variant text-[22px]" />
-          <span className="absolute top-1 right-1 bg-error text-on-error text-[10px] font-bold px-1 rounded-full min-w-[16px] h-4 flex items-center justify-center">
-            3
-          </span>
+        <button
+          type="submit"
+          disabled={!query.trim()}
+          className="flex items-center gap-xs px-md py-sm bg-primary text-on-primary rounded-xl text-label-sm font-semibold hover:brightness-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+        >
+          <Icon name="search" className="text-[18px]" />
+          검색
         </button>
-      </div>
+      </form>
     </header>
   );
 }
