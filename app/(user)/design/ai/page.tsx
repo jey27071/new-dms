@@ -25,10 +25,7 @@ export default function DesignAiHubPage() {
     <div className="max-w-[1280px] mx-auto space-y-xl">
       <div>
         <div className="flex items-center gap-sm text-secondary text-label-sm mb-xs">
-          <Link href="/design" className="hover:text-primary transition-colors">
-            디자인 템플릿
-          </Link>
-          <Icon name="chevron_right" className="text-[14px]" />
+          <Icon name="auto_fix_high" className="text-[14px]" />
           <span className="text-primary font-semibold">AI로 디자인 하기</span>
         </div>
         <h1 className="text-h1 font-semibold text-on-surface">AI로 디자인 하기</h1>

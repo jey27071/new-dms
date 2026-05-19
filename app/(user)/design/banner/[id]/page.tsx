@@ -136,7 +136,7 @@ export default function BannerEditorPage() {
       <div className="flex items-end justify-between">
         <div>
           <div className="flex items-center gap-xs text-secondary text-label-sm mb-xs">
-            <Icon name="auto_awesome" className="text-[14px]" />
+            <Icon name="dashboard_customize" className="text-[14px]" />
             <Link href="/design/banner" className="hover:text-primary transition-colors">
               배너(현수막)
             </Link>

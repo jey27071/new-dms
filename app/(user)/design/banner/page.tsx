@@ -28,7 +28,7 @@ export default function BannerPickerPage() {
     <div className="max-w-[1280px] mx-auto space-y-xl">
       <div>
         <div className="flex items-center gap-sm text-secondary text-label-sm mb-xs">
-          <Icon name="auto_awesome" className="text-[14px]" />
+          <Icon name="dashboard_customize" className="text-[14px]" />
           <span>디자인 템플릿</span>
           <Icon name="chevron_right" className="text-[14px]" />
           <span className="text-primary font-semibold">배너(현수막)</span>

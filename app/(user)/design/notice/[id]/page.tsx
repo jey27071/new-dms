@@ -134,7 +134,7 @@ export default function NoticeEditorPage() {
       <div className="flex items-end justify-between">
         <div>
           <div className="flex items-center gap-xs text-secondary text-label-sm mb-xs">
-            <Icon name="auto_awesome" className="text-[14px]" />
+            <Icon name="dashboard_customize" className="text-[14px]" />
             <Link href="/design/notice" className="hover:text-primary transition-colors">
               사내 게시물
             </Link>

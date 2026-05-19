@@ -18,14 +18,6 @@ const TOOLS = [
     accentBg: "bg-tertiary-fixed",
     accentText: "text-tertiary",
   },
-  {
-    title: "AI로 디자인 하기",
-    description: "사내 검증 프롬프트 라이브러리와 AI 이미지 생성 도구를 한 곳에서.",
-    href: "/design/ai",
-    icon: "auto_fix_high",
-    accentBg: "bg-secondary-container",
-    accentText: "text-on-secondary-fixed-variant",
-  },
 ];
 
 export default function DesignHubPage() {
@@ -33,17 +25,17 @@ export default function DesignHubPage() {
     <div className="max-w-[1280px] mx-auto space-y-xl">
       <div>
         <div className="flex items-center gap-sm text-secondary text-label-sm mb-xs">
-          <Icon name="auto_awesome" className="text-[14px]" />
+          <Icon name="dashboard_customize" className="text-[14px]" />
           <span className="text-primary font-semibold">디자인 템플릿</span>
         </div>
         <h1 className="text-h1 font-semibold text-on-surface">디자인 템플릿</h1>
         <p className="text-body-base text-on-surface-variant mt-xs max-w-2xl">
-          템플릿 기반의 배너·사내 게시물 제작 도구와 생성형 AI 프롬프트 라이브러리를 한 곳에서
-          이용하세요. 사용할 도구를 선택해 시작하시면 됩니다.
+          관리자가 미리 세팅한 템플릿을 선택해 문구만 바꾸면 됩니다. 일관된 브랜드 톤을 유지하면서
+          빠르게 출력물을 만들 수 있어요.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
         {TOOLS.map((t) => (
           <Link
             key={t.href}
